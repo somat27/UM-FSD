@@ -97,24 +97,6 @@ def gerar_itens_para_produtor(Info_Produtor, numero_itens):
 def listar_produtos(produtos):
     return [f"{produto['Nome']} - Categoria: {produto.get('Categoria', 'Desconhecida')} - Preço: {produto['Preco']:.2f} - Quantidade: {produto['Quantidade']}" for produto in produtos]
 
-def adicionar_stock_periodicamente(id_produtor):
-    intervalo_tempo = 30
-    while True:
-        time.sleep(intervalo_tempo)
-        produtores = carregar_dados(arquivo_produtores)
-        produtor = next((p for p in produtores if p["ID"] == id_produtor), None)
-        if produtor and produtor['Produtos']:
-            num_produtos_para_atualizar = random.randint(1, len(produtor['Produtos']))
-            produtos_para_atualizar = random.sample(produtor['Produtos'], num_produtos_para_atualizar)
-            with Lock:
-                for produto in produtos_para_atualizar:
-                    stock_atual = produto.get('Quantidade', 0)
-                    quantidade_maxima = random.randint(100, 200)
-                    novo_stock = min(stock_atual + random.randint(5, 20), quantidade_maxima)
-                    produto['Quantidade'] = novo_stock
-                    print(f"Stock de '{produto['Nome']}' atualizado para {novo_stock} [Antigo: {stock_atual}].")     
-            salvar_dados(arquivo_produtores, produtores)
-
 def listar_produtos_endpoint(cliente_socket, id_produtor):
     global Info_Produtor
     produtos = Info_Produtor['Produtos'] if Info_Produtor else []
@@ -134,7 +116,7 @@ def comprar_produto_endpoint(cliente_socket, nome_produto, quantidade):
             print(f"Compra falhou: Produto '{nome_produto}' não encontrado ou quantidade insuficiente.")
     cliente_socket.sendall(resposta.encode())
 
-def gerenciar_conexao(cliente_socket, endereco, conexoes, produtos_marketplace):
+def gerenciar_conexao(cliente_socket, endereco, conexoes):
     try:
         print(f"Conexão estabelecida com {endereco}.")
         with cliente_socket:
@@ -145,7 +127,10 @@ def gerenciar_conexao(cliente_socket, endereco, conexoes, produtos_marketplace):
                 if data.startswith("SUBSCREVER_PRODUTO"):
                     _, nome_produto, quantidade = data.split(',', maxsplit=2)
                     quantidade = int(quantidade)
-                    produtos_marketplace.setdefault(endereco, []).append((nome_produto, quantidade))
+                    for produto in Info_Produtor["Produtos"]:
+                        if produto["Nome"] == nome_produto:
+                            produto["Quantidade"] += quantidade
+                            break
                     comprar_produto_endpoint(cliente_socket, nome_produto, quantidade)
                 elif data.startswith("LISTAR_PRODUTOS"):
                     listar_produtos_endpoint(cliente_socket)
@@ -252,14 +237,14 @@ def servidor_produtor(Info_Produtor):
                 cliente_socket, endereco = servidor_socket.accept()
             except socket.timeout:
                 continue
-            threading.Thread(target=gerenciar_conexao, args=(cliente_socket, endereco, conexoes, produtos_marketplace)).start()
+            threading.Thread(target=gerenciar_conexao, args=(cliente_socket, endereco, conexoes)).start()
         except OSError:
             break
     servidor_socket.close()
     print(f"{COR_ERRO}Erro: {COR_RESET}Servidor do Produtor '{Info_Produtor['Nome']}' desligado.")
 
 def iniciar_servidor_flask():
-    app.run(port=Info_Produtor["PortaSocket"], debug=False, use_reloader=False) 
+    app.run(port=Info_Produtor["PortaRest"], debug=False, use_reloader=False) 
 
 def menu_inicial():
     global Info_Produtor
@@ -272,9 +257,9 @@ def menu_inicial():
         threading.Thread(target=servidor_produtor, args=(Info_Produtor,)).start()
         break
 
-@app.route('/status')
+@app.route('/categorias')
 def status():
-    return jsonify({"status": "servidor ativo"}), 200
+    return jsonify({"status": "teste"}), 200
 
 if __name__ == "__main__":
     menu_inicial()

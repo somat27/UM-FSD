@@ -289,7 +289,6 @@ def obter_produtores():
     url = "http://193.136.11.170:5001/produtor"
     try:
         response = requests.get(url)
-        response.raise_for_status()
         return response.json() 
     except requests.exceptions.RequestException as e:
         return []
@@ -298,7 +297,6 @@ def obter_categorias(ip, porta):
     url = f"http://{ip}:{porta}/categorias"
     try:
         response = requests.get(url)
-        response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         return []
@@ -337,16 +335,20 @@ def marketplace():
     while True:
         categoria_escolhida = input("\nEscolha uma categoria: ")
         if categoria_escolhida in categorias_disponiveis:
-            break
+            produtos_disponiveis = []
+            for produtor in categorias_disponiveis[categoria_escolhida]:
+                produtos = obter_produtos_por_categoria(produtor['ip'], produtor['porta'], categoria_escolhida)
+                if produtos:
+                    print(f"Produtor: {produtor['nome']}")
+                    for index, produto in enumerate(produtos, start=1):
+                        produtos_disponiveis.append(produto)
+                        print(f"{index} - {produto['produto']}, Preço: {produto['preco']}, Quantidade: {produto['quantidade']}")
+            if produtos_disponiveis:
+                break
+            else:
+                print(f"Não há produtos disponíveis na categoria '{categoria_escolhida}'. Por favor, escolha outra categoria.")
         else:
             print(f"A categoria '{categoria_escolhida}' não está disponível. Tente novamente.")
-    for produtor in categorias_disponiveis[categoria_escolhida]:
-        produtos = obter_produtos_por_categoria(produtor['ip'], produtor['porta'], categoria_escolhida)
-        print(f"Produtor: {produtor['nome']}")
-        if produtos:
-            for index, produto in enumerate(produtos, start=1):
-                produtos_disponiveis.append(produto)
-                print(f"{index} - {produto['produto']}, Preço: {produto['preco']}, Quantidade: {produto['quantidade']}")
     while True:
         escolha = input("\nEscolha os números dos produtos que deseja comprar (separados por vírgula) ou 'sair' para encerrar: ")
         if escolha.lower() == 'sair':
