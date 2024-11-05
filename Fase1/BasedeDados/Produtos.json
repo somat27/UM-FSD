@@ -1,0 +1,231 @@
+{
+    "Bebidas": [
+        {
+            "Nome_Produto": "Agua Mineral",
+            "Preco": [1, 3],
+            "Quantidade": [10, 200]
+        },
+        {
+            "Nome_Produto": "Refrigerante",
+            "Preco": [1, 3],
+            "Quantidade": [5, 50]
+        }
+    ],
+    "Carnes": [
+        {
+            "Nome_Produto": "Carne Bovina",
+            "Preco": [8, 15],
+            "Quantidade": [1, 10]
+        },
+        {
+            "Nome_Produto": "Frango",
+            "Preco": [4, 8],
+            "Quantidade": [1, 10]
+        },
+        {
+            "Nome_Produto": "Peixe",
+            "Preco": [6, 12],
+            "Quantidade": [1, 8]
+        }
+    ],
+    "Frutas": [
+        {
+            "Nome_Produto": "Banana",
+            "Preco": [0.2, 1],
+            "Quantidade": [5, 100]
+        },
+        {
+            "Nome_Produto": "Laranja",
+            "Preco": [0.3, 0.8],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Maca",
+            "Preco": [0.4, 1],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Morango",
+            "Preco": [0.8, 2],
+            "Quantidade": [5, 50]
+        },
+        {
+            "Nome_Produto": "Uva",
+            "Preco": [1, 3],
+            "Quantidade": [5, 50]
+        }
+    ],
+    "Graos": [
+        {
+            "Nome_Produto": "Arroz",
+            "Preco": [1.5, 3],
+            "Quantidade": [1, 10]
+        },
+        {
+            "Nome_Produto": "Feijao",
+            "Preco": [1, 2],
+            "Quantidade": [1, 10]
+        },
+        {
+            "Nome_Produto": "Lentilha",
+            "Preco": [1.5, 3],
+            "Quantidade": [1, 10]
+        }
+    ],
+    "Padaria": [
+        {
+            "Nome_Produto": "Pao",
+            "Preco": [1, 2],
+            "Quantidade": [10, 100]
+        }
+    ],
+    "Snacks": [
+        {
+            "Nome_Produto": "Biscoito",
+            "Preco": [0.5, 2],
+            "Quantidade": [5, 50]
+        },
+        {
+            "Nome_Produto": "Chocolate",
+            "Preco": [1.5, 3],
+            "Quantidade": [5, 30]
+        }
+    ],
+    "Vegetais": [
+        {
+            "Nome_Produto": "Alface",
+            "Preco": [0.5, 1.5],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Batata",
+            "Preco": [0.4, 1],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Cenoura",
+            "Preco": [0.3, 1],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Pepino",
+            "Preco": [0.5, 1.5],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Tomate",
+            "Preco": [0.5, 1.5],
+            "Quantidade": [10, 100]
+        }
+    ],
+    "Eletronicos": [
+        {
+            "Nome_Produto": "Telemóvel",
+            "Preco": [100, 1000],
+            "Quantidade": [1, 50]
+        },
+        {
+            "Nome_Produto": "Portátil",
+            "Preco": [500, 2000],
+            "Quantidade": [1, 30]
+        },
+        {
+            "Nome_Produto": "Tablet",
+            "Preco": [150, 800],
+            "Quantidade": [1, 40]
+        },
+        {
+            "Nome_Produto": "Câmara Fotográfica",
+            "Preco": [200, 1500],
+            "Quantidade": [1, 20]
+        }
+    ],
+    "Roupas": [
+        {
+            "Nome_Produto": "T-shirt",
+            "Preco": [5, 20],
+            "Quantidade": [10, 200]
+        },
+        {
+            "Nome_Produto": "Calças",
+            "Preco": [20, 50],
+            "Quantidade": [10, 150]
+        },
+        {
+            "Nome_Produto": "Casaco",
+            "Preco": [30, 100],
+            "Quantidade": [5, 100]
+        },
+        {
+            "Nome_Produto": "Sapatos",
+            "Preco": [20, 80],
+            "Quantidade": [10, 100]
+        }
+    ],
+    "Livros": [
+        {
+            "Nome_Produto": "Romance",
+            "Preco": [10, 30],
+            "Quantidade": [5, 200]
+        },
+        {
+            "Nome_Produto": "Ficção Científica",
+            "Preco": [15, 35],
+            "Quantidade": [5, 150]
+        },
+        {
+            "Nome_Produto": "Auto-ajuda",
+            "Preco": [8, 25],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "História",
+            "Preco": [12, 40],
+            "Quantidade": [5, 120]
+        }
+    ],
+    "Brinquedos": [
+        {
+            "Nome_Produto": "Carro de Brinquedo",
+            "Preco": [5, 20],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Boneca",
+            "Preco": [10, 25],
+            "Quantidade": [10, 50]
+        },
+        {
+            "Nome_Produto": "Jogo de Tabuleiro",
+            "Preco": [15, 40],
+            "Quantidade": [5, 30]
+        },
+        {
+            "Nome_Produto": "Blocos de Construção",
+            "Preco": [20, 60],
+            "Quantidade": [5, 40]
+        }
+    ],
+    "Ferramentas": [
+        {
+            "Nome_Produto": "Chave de Fendas",
+            "Preco": [2, 10],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Martelo",
+            "Preco": [5, 15],
+            "Quantidade": [5, 50]
+        },
+        {
+            "Nome_Produto": "Alicate",
+            "Preco": [3, 12],
+            "Quantidade": [5, 40]
+        },
+        {
+            "Nome_Produto": "Serra",
+            "Preco": [8, 25],
+            "Quantidade": [5, 20]
+        }
+    ]
+}

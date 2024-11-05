@@ -1,0 +1,182 @@
+[
+    {
+        "ID": 1,
+        "Nome": "Tomas",
+        "IP": "10.8.0.53",
+        "Porta": 1025,
+        "Produtos": [
+            {
+                "Nome": "Serra",
+                "Categoria": "Ferramentas",
+                "Preco": 9.0,
+                "Quantidade": 133
+            },
+            {
+                "Nome": "T-shirt",
+                "Categoria": "Roupas",
+                "Preco": 7.22,
+                "Quantidade": 110
+            },
+            {
+                "Nome": "Carro de Brinquedo",
+                "Categoria": "Brinquedos",
+                "Preco": 18.44,
+                "Quantidade": 149
+            }
+        ]
+    },
+    {
+        "ID": 2,
+        "Nome": "Tomas",
+        "IP": "10.8.0.53",
+        "Porta": 1026,
+        "Produtos": [
+            {
+                "Nome": "Carne Bovina",
+                "Categoria": "Carnes",
+                "Preco": 9.96,
+                "Quantidade": 160
+            },
+            {
+                "Nome": "Alicate",
+                "Categoria": "Ferramentas",
+                "Preco": 9.9,
+                "Quantidade": 135
+            },
+            {
+                "Nome": "Batata",
+                "Categoria": "Vegetais",
+                "Preco": 0.46,
+                "Quantidade": 146
+            },
+            {
+                "Nome": "Agua Mineral",
+                "Categoria": "Bebidas",
+                "Preco": 2.68,
+                "Quantidade": 113
+            }
+        ]
+    },
+    {
+        "ID": 3,
+        "Nome": "Fernando",
+        "IP": "10.8.0.8",
+        "Porta": 1027,
+        "Produtos": [
+            {
+                "Nome": "Casaco",
+                "Categoria": "Roupas",
+                "Preco": 41.5,
+                "Quantidade": 45
+            },
+            {
+                "Nome": "História",
+                "Categoria": "Livros",
+                "Preco": 14.88,
+                "Quantidade": 96
+            },
+            {
+                "Nome": "Banana",
+                "Categoria": "Frutas",
+                "Preco": 0.83,
+                "Quantidade": 11
+            },
+            {
+                "Nome": "Ficção Científica",
+                "Categoria": "Livros",
+                "Preco": 24.36,
+                "Quantidade": 60
+            }
+        ]
+    },
+    {
+        "ID": 4,
+        "Nome": "Fernando",
+        "IP": "10.8.0.8",
+        "Porta": 1028,
+        "Produtos": [
+            {
+                "Nome": "Tablet",
+                "Categoria": "Eletronicos",
+                "Preco": 170.31,
+                "Quantidade": 38
+            },
+            {
+                "Nome": "Boneca",
+                "Categoria": "Brinquedos",
+                "Preco": 20.54,
+                "Quantidade": 10
+            },
+            {
+                "Nome": "Laranja",
+                "Categoria": "Frutas",
+                "Preco": 0.54,
+                "Quantidade": 70
+            },
+            {
+                "Nome": "História",
+                "Categoria": "Livros",
+                "Preco": 12.15,
+                "Quantidade": 21
+            },
+            {
+                "Nome": "Serra",
+                "Categoria": "Ferramentas",
+                "Preco": 20.44,
+                "Quantidade": 19
+            }
+        ]
+    },
+    {
+        "ID": 5,
+        "Nome": "ZeMiguel",
+        "IP": "10.8.0.16",
+        "Porta": 1029,
+        "Produtos": [
+            {
+                "Nome": "Lentilha",
+                "Categoria": "Graos",
+                "Preco": 2.95,
+                "Quantidade": 2
+            },
+            {
+                "Nome": "Casaco",
+                "Categoria": "Roupas",
+                "Preco": 49.87,
+                "Quantidade": 25
+            },
+            {
+                "Nome": "Biscoito",
+                "Categoria": "Snacks",
+                "Preco": 1.72,
+                "Quantidade": 36
+            }
+        ]
+    },
+    {
+        "ID": 6,
+        "Nome": "ZeMiguel",
+        "IP": "10.8.0.16",
+        "Porta": 1030,
+        "Produtos": [
+            {
+                "Nome": "Auto-ajuda",
+                "Categoria": "Livros",
+                "Preco": 14.68,
+                "Quantidade": 70
+            },
+            {
+                "Nome": "Cenoura",
+                "Categoria": "Vegetais",
+                "Preco": 0.5,
+                "Quantidade": 39
+            },
+            {
+                "Nome": "Batata",
+                "Categoria": "Vegetais",
+                "Preco": 0.83,
+                "Quantidade": 15
+            }
+        ]
+    }
+]
