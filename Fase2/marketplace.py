@@ -305,15 +305,14 @@ def obter_categorias(ip, porta):
             print(f"Erro ao obter categorias: {response.status_code} - {response.text}")
             return []
     except requests.exceptions.RequestException as e:
-        print(f"Erro na requisição: {e}")
+        #print(f"Erro na requisição: {e}")
         return []
     
 def obter_produtos_por_categoria(ip, porta, categoria):
-    url = f"http://{ip}:{porta}/produtos?categoria={categoria}"
+    url = f"http://{ip}:{porta}/produtos/{categoria}"
     try:
         response = requests.get(url)
-        response.raise_for_status()
-        return response.json().get("categorias", [])
+        return response.json()
     except requests.exceptions.RequestException as e:
         return []
     
@@ -343,6 +342,7 @@ def marketplace():
         categoria_escolhida = input("\nEscolha uma categoria: ")
         if categoria_escolhida in categorias_disponiveis:
             produtos_disponiveis = []
+            print(categorias_disponiveis)
             for produtor in categorias_disponiveis[categoria_escolhida]:
                 produtos = obter_produtos_por_categoria(produtor['ip'], produtor['porta'], categoria_escolhida)
                 if produtos:

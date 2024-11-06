@@ -84,7 +84,6 @@ def registar_produtor(nome_produtor):
 
 def gerar_itens_para_produtor(Info_Produtor, numero_itens):  
     produtos = carregar_dados(arquivo_produtos)
-    print("Conteúdo de 'produtos':", produtos)
     todos_produtos = [dict(produto, Categoria=categoria) for categoria, lista_produtos in produtos.items() for produto in lista_produtos]
     produtos_selecionados = random.sample(todos_produtos, min(numero_itens, len(todos_produtos)))
     with Lock:
@@ -266,15 +265,45 @@ def status():
 
 @app.route('/categorias', methods=['GET'])
 def obter_categorias():
-    if Info_Produtor["Produtos"]:
-        # Extrair todas as categorias únicas dos produtos
-        categorias = {produto['Categoria'] for produto in Info_Produtor["Produtos"]}
+    # Verifica se há produtos registrados no Info_Produtor
+    if "Produtos" in Info_Produtor and Info_Produtor["Produtos"]:
+        # Usa um conjunto para garantir categorias únicas
+        categorias_disponiveis = set()
         
-        # Converter o set de categorias em uma lista para retornar como JSON
-        return jsonify({"categorias": list(categorias)}), 200
-    else:
-        return jsonify({"message": "Não há produtos registrados."}), 404
+        # Itera sobre cada produto no Info_Produtor["Produtos"]
+        for produto in Info_Produtor["Produtos"]:
+            categoria = produto.get('Categoria')
+            if categoria:
+                categorias_disponiveis.add(categoria)  # Adiciona a categoria ao conjunto
 
+        # Retorna apenas a lista de categorias
+        return jsonify(list(categorias_disponiveis)), 200
+    
+    # Se não houver produtos, retorna uma lista vazia
+    return jsonify([]), 200
+
+
+@app.route('/produtos/<categoria>', methods=['GET'])
+def obter_produtos_por_categoria(categoria):
+     # Lista para armazenar os produtos da categoria solicitada
+    produtos_encontrados = []
+    # Verifica se a chave "Produtos" existe e contém produtos
+    if "Produtos" in Info_Produtor:
+        for produto in Info_Produtor["Produtos"]:
+            nova_categoria = produto.get('Categoria')
+            # Verifica se o produto pertence à categoria solicitada
+            if categoria == nova_categoria:
+                produtos_encontrados.append(produto)  # Adiciona o produto à lista
+    
+    if produtos_encontrados:
+        return jsonify(produtos_encontrados)  # Retorna a lista de produtos como JSON
+    else:
+        return jsonify({"erro": f"Nenhum produto encontrado para a categoria '{categoria}'."}), 404
+                
+
+
+
+    
 
 if __name__ == "__main__":
     menu_inicial()
