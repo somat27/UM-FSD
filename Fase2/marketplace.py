@@ -19,9 +19,6 @@ taxas_revenda = {}
 taxa_padrao = 20.0
 
 def carregar_json(caminho_arquivo):
-    """
-    Carrega uma lista a partir de um arquivo JSON, se existir.
-    """
     try:
         with open(caminho_arquivo, 'r') as f:
             conteudo = f.read() 
@@ -34,17 +31,11 @@ def carregar_json(caminho_arquivo):
         return []
 
 def gerar_categoria():
-    """
-    Seleciona aleatoriamente uma categoria de produtos.
-    """
     produtos = carregar_json(ARQUIVO_PRODUTOS)
     todas_categorias = list(produtos.keys())
     return random.choice(todas_categorias) if todas_categorias else None
         
 def testar_porta_ocupada(ip, porta):
-    """
-    Verifica se a porta está ocupada.
-    """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.settimeout(0.01)
         try:
@@ -54,9 +45,6 @@ def testar_porta_ocupada(ip, porta):
             return True
 
 def testar_conexoes():
-    """
-    Testa as conexões dos produtores e retorna aqueles que estão online.
-    """
     produtores = carregar_json(ARQUIVO_PRODUTORES)
     return [
         (p["ID"], p["IP"], p["Porta"], p["Nome"])
@@ -64,9 +52,6 @@ def testar_conexoes():
     ]
 
 def listar_subscricoes():
-    """
-    Lista as subscrições de produtos comprados, separando por ID do produtor.
-    """
     global taxa_padrao
     produtos_por_produtor = {}
     for id_produto, nome_produtor, ip, porta, nome_produto, quantidade, preco_compra in produtos_comprados:
@@ -86,9 +71,6 @@ def listar_subscricoes():
             print(f"  - Nome: {nome_produto}, Quantidade: {quantidade}, Preço de Compra: {preco_compra:.2f}, Preço de Venda: {preco_venda:.2f} ({taxa_revenda}%)")
 
 def definir_taxa_revenda():
-    """
-    Permite definir uma taxa de revenda para os produtos já comprados.
-    """
     if not produtos_comprados:
         print("Nenhum produto foi comprado ainda.")
         return
@@ -109,9 +91,6 @@ def definir_taxa_revenda():
         print("Seleção inválida. Tente novamente.")
 
 def comprar_produtos():
-    """
-    Gerencia a compra de produtos.
-    """
     produtos = carregar_json(ARQUIVO_PRODUTOS)
     todas_categorias = list(produtos.keys())
     if not todas_categorias:
@@ -134,9 +113,6 @@ def comprar_produtos():
             print("Categoria inválida. Tente novamente.")
 
 def conectar_ao_produtor(sock_antigo, ip, porta, nome_produtor):
-    """
-    Tenta se conectar ao produtor e retorna o socket.
-    """
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((ip, porta))
@@ -146,9 +122,6 @@ def conectar_ao_produtor(sock_antigo, ip, porta, nome_produtor):
         return sock_antigo
 
 def verificar_conexao_periodicamente(sock, ip, porta, nome_produtor, timeout=30):
-    """
-    Verifica periodicamente a conexão com o produtor.
-    """
     falhas_consec = 0
     while falhas_consec * 2 < timeout:
         with Lock:
@@ -173,9 +146,6 @@ def verificar_conexao_periodicamente(sock, ip, porta, nome_produtor, timeout=30)
     return False
 
 def remover_produtos_produtor(nome_produtor, ip, porta):
-    """
-    Remove todos os produtos de um produtor desconectado.
-    """
     global produtos_comprados
     global conexoes
     produtos_comprados = [p for p in produtos_comprados if p[0] != nome_produtor]
@@ -253,9 +223,6 @@ def menu_pesquisa_produtos(categoria_desejada):
         print("Seleção inválida. Tente novamente com números válidos.")
 
 def menu_marketplace():
-    """
-    Apresenta o menu principal do marketplace.
-    """
     while True:
         print("--- Menu Marketplace ---")
         print("1. Lista de Subscrições")
@@ -276,10 +243,7 @@ def menu_marketplace():
             print("Opção inválida. Tente novamente.")
 
 def iniciar():
-    while True:
-        categoria = gerar_categoria()
-        if menu_pesquisa_produtos(categoria) != 1:
-            break
+    marketplace()
     menu_marketplace()
     for sock, _ in conexoes.values():
         sock.close()
@@ -288,7 +252,7 @@ def iniciar():
 def obter_produtores():
     url = "http://193.136.11.170:5001/produtor"
     try:
-        response = requests.get(url)
+        response = requests.get(url,timeout=2)
         return response.json() 
     except requests.exceptions.RequestException as e:
         return []
@@ -296,22 +260,19 @@ def obter_produtores():
 def obter_categorias(ip, porta):
     url = f"http://{ip}:{porta}/categorias"
     try:
-        response = requests.get(url)
-        # Verifica se a resposta foi bem-sucedida
+        response = requests.get(url,timeout=2)
         if response.status_code == 200:
-            # Retorna a lista de categorias que está dentro do JSON
             return response.json()
         else:
             print(f"Erro ao obter categorias: {response.status_code} - {response.text}")
             return []
     except requests.exceptions.RequestException as e:
-        #print(f"Erro na requisição: {e}")
         return []
     
 def obter_produtos_por_categoria(ip, porta, categoria):
-    url = f"http://{ip}:{porta}/produtos/{categoria}"
+    url = f"http://{ip}:{porta}/produtos?categoria={categoria}"
     try:
-        response = requests.get(url)
+        response = requests.get(url,timeout=2)
         return response.json()
     except requests.exceptions.RequestException as e:
         return []
@@ -319,7 +280,7 @@ def obter_produtos_por_categoria(ip, porta, categoria):
 def comprar_produto(ip, porta, produto, quantidade):
     url = f"http://{ip}:{porta}/comprar/{produto}/{quantidade}"
     try:
-        response = requests.get(url)
+        response = requests.get(url,timeout=2)
         response.raise_for_status() 
         print(f"Compra realizada com sucesso: {produto} - Quantidade: {quantidade}")
     except requests.exceptions.RequestException as e:
@@ -328,28 +289,36 @@ def comprar_produto(ip, porta, produto, quantidade):
 def marketplace():
     produtores = obter_produtores()
     categorias_disponiveis = {}
+    produtores_disponiveis = []
     produtos_disponiveis = []
     for produtor in produtores:
         categorias = obter_categorias(produtor['ip'], produtor['porta'])
-        if categorias:  # Se a lista de categorias não estiver vazia
+        if categorias:
             print(f"Produtor: {produtor['nome']}")
-            for categoria in categorias:  # Itera sobre as categorias retornadas
+            for categoria in categorias:
                 print(f" - {categoria}")
                 if categoria not in categorias_disponiveis:
-                    categorias_disponiveis[categoria] = []  # Cria uma lista para novas categorias
-                categorias_disponiveis[categoria].append(produtor)  # Adiciona o produtor à lista
+                    categorias_disponiveis[categoria] = []
+                if produtor not in categorias_disponiveis[categoria]:
+                    categorias_disponiveis[categoria].append(produtor)
     while True:
         categoria_escolhida = input("\nEscolha uma categoria: ")
         if categoria_escolhida in categorias_disponiveis:
             produtos_disponiveis = []
-            print(categorias_disponiveis)
             for produtor in categorias_disponiveis[categoria_escolhida]:
-                produtos = obter_produtos_por_categoria(produtor['ip'], produtor['porta'], categoria_escolhida)
-                if produtos:
-                    print(f"Produtor: {produtor['nome']}")
-                    for index, produto in enumerate(produtos, start=1):
-                        produtos_disponiveis.append(produto)
-                        print(f"{index} - {produto['produto']}, Preço: {produto['preco']}, Quantidade: {produto['quantidade']}")
+                try:
+                    produtos = obter_produtos_por_categoria(produtor['ip'], produtor['porta'], categoria_escolhida)
+                    if produtos:
+                        print(f"Produtor: {produtor['nome']}")
+                        for index, produto in enumerate(produtos, start=1):
+                            if all(key in produto for key in ['categoria', 'produto', 'preco', 'quantidade']):
+                                produtos_disponiveis.append(produto)
+                                print(f"{index} - {produto['produto']}, Preço: {produto['preco']}€, Quantidade: {produto['quantidade']}")
+                            else:
+                                print("Erro no formato dos dados do produto:", produto)
+                except Exception as e:
+                    print(f"Erro ao obter produtos do produtor {produtor['nome']} ({produtor['ip']}:{produtor['porta']}): {e}")
+                    continue
             if produtos_disponiveis:
                 break
             else:
@@ -373,9 +342,10 @@ def marketplace():
                     try:
                         quantidade = int(input(f"Digite a quantidade para {produto['produto']} (disponível: {produto['quantidade']}): "))
                         if 1 <= quantidade <= produto['quantidade']:
-                            ip = categorias_disponiveis[categoria_escolhida][0]['ip']
-                            porta = categorias_disponiveis[categoria_escolhida][0]['porta']
-                            comprar_produto(ip, porta, produto['produto'], quantidade) 
+                            produtor = categorias_disponiveis[categoria_escolhida][0] 
+                            ip = produtor['ip']
+                            porta = produtor['porta']
+                            comprar_produto(ip, porta, produto['produto'], quantidade)
                             break
                         else:
                             print("Quantidade inválida. Tente novamente.")
@@ -384,4 +354,4 @@ def marketplace():
         break
 
 if __name__ == "__main__":
-   marketplace()
+   iniciar()

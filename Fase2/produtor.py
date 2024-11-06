@@ -16,18 +16,18 @@ log.setLevel(logging.ERROR)
 
 Lock = threading.RLock()
 
-IP_Default = '127.0.0.1'
+IP_Default = '10.8.0.6'
 IP_Gestor = '193.136.11.170'
 Porta_Default = 1025
 Porta_Gestor = 5001
 servidor_ativo = True
 Info_Produtor = {}
-arquivo_produtos = 'Fase2/BasedeDados/Produtos.json'
+arquivo_produtos = 'BasedeDados/Produtos.json'
 CATEGORIAS_PERMITIDAS = ["Fruta", "Livros", "Roupa", "Ferramentas", "Computadores", "Smartphones", "Filmes", "Sapatos"]
 
-COR_SUCESSO = '\033[92m'  # Verde
-COR_ERRO = '\033[91m'     # Vermelho
-COR_RESET = '\033[0m'     # Reset para a cor padrão
+COR_SUCESSO = '\033[92m' 
+COR_ERRO = '\033[91m'    
+COR_RESET = '\033[0m'    
 
 def carregar_dados(arquivo):
     with Lock:
@@ -257,53 +257,30 @@ def menu_inicial():
         threading.Thread(target=servidor_produtor, args=(Info_Produtor,)).start()
         break
 
-"""
-@app.route('/categorias')
-def status():
-    return jsonify({"status": "teste"}), 200
-"""
-
 @app.route('/categorias', methods=['GET'])
 def obter_categorias():
-    # Verifica se há produtos registrados no Info_Produtor
     if "Produtos" in Info_Produtor and Info_Produtor["Produtos"]:
-        # Usa um conjunto para garantir categorias únicas
         categorias_disponiveis = set()
-        
-        # Itera sobre cada produto no Info_Produtor["Produtos"]
         for produto in Info_Produtor["Produtos"]:
             categoria = produto.get('Categoria')
             if categoria:
-                categorias_disponiveis.add(categoria)  # Adiciona a categoria ao conjunto
-
-        # Retorna apenas a lista de categorias
+                categorias_disponiveis.add(categoria)
         return jsonify(list(categorias_disponiveis)), 200
-    
-    # Se não houver produtos, retorna uma lista vazia
     return jsonify([]), 200
 
 
 @app.route('/produtos/<categoria>', methods=['GET'])
 def obter_produtos_por_categoria(categoria):
-     # Lista para armazenar os produtos da categoria solicitada
     produtos_encontrados = []
-    # Verifica se a chave "Produtos" existe e contém produtos
     if "Produtos" in Info_Produtor:
         for produto in Info_Produtor["Produtos"]:
             nova_categoria = produto.get('Categoria')
-            # Verifica se o produto pertence à categoria solicitada
             if categoria == nova_categoria:
-                produtos_encontrados.append(produto)  # Adiciona o produto à lista
-    
+                produtos_encontrados.append(produto)
     if produtos_encontrados:
-        return jsonify(produtos_encontrados)  # Retorna a lista de produtos como JSON
+        return jsonify(produtos_encontrados)
     else:
         return jsonify({"erro": f"Nenhum produto encontrado para a categoria '{categoria}'."}), 404
                 
-
-
-
-    
-
 if __name__ == "__main__":
     menu_inicial()
