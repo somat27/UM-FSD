@@ -22,7 +22,7 @@ Porta_Default = 1025
 Porta_Gestor = 5001
 servidor_ativo = True
 Info_Produtor = {}
-arquivo_produtos = 'BasedeDados/Produtos.json'
+arquivo_produtos = 'Fase2/BasedeDados/Produtos.json'
 CATEGORIAS_PERMITIDAS = ["Fruta", "Livros", "Roupa", "Ferramentas", "Computadores", "Smartphones", "Filmes", "Sapatos"]
 
 COR_SUCESSO = '\033[92m'  # Verde
@@ -84,6 +84,7 @@ def registar_produtor(nome_produtor):
 
 def gerar_itens_para_produtor(Info_Produtor, numero_itens):  
     produtos = carregar_dados(arquivo_produtos)
+    print("Conteúdo de 'produtos':", produtos)
     todos_produtos = [dict(produto, Categoria=categoria) for categoria, lista_produtos in produtos.items() for produto in lista_produtos]
     produtos_selecionados = random.sample(todos_produtos, min(numero_itens, len(todos_produtos)))
     with Lock:
@@ -257,9 +258,23 @@ def menu_inicial():
         threading.Thread(target=servidor_produtor, args=(Info_Produtor,)).start()
         break
 
+"""
 @app.route('/categorias')
 def status():
     return jsonify({"status": "teste"}), 200
+"""
+
+@app.route('/categorias', methods=['GET'])
+def obter_categorias():
+    if Info_Produtor["Produtos"]:
+        # Extrair todas as categorias únicas dos produtos
+        categorias = {produto['Categoria'] for produto in Info_Produtor["Produtos"]}
+        
+        # Converter o set de categorias em uma lista para retornar como JSON
+        return jsonify({"categorias": list(categorias)}), 200
+    else:
+        return jsonify({"message": "Não há produtos registrados."}), 404
+
 
 if __name__ == "__main__":
     menu_inicial()

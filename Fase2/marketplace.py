@@ -297,8 +297,15 @@ def obter_categorias(ip, porta):
     url = f"http://{ip}:{porta}/categorias"
     try:
         response = requests.get(url)
-        return response.json()
+        # Verifica se a resposta foi bem-sucedida
+        if response.status_code == 200:
+            # Retorna a lista de categorias que está dentro do JSON
+            return response.json()
+        else:
+            print(f"Erro ao obter categorias: {response.status_code} - {response.text}")
+            return []
     except requests.exceptions.RequestException as e:
+        print(f"Erro na requisição: {e}")
         return []
     
 def obter_produtos_por_categoria(ip, porta, categoria):
@@ -306,7 +313,7 @@ def obter_produtos_por_categoria(ip, porta, categoria):
     try:
         response = requests.get(url)
         response.raise_for_status()
-        return response.json()
+        return response.json().get("categorias", [])
     except requests.exceptions.RequestException as e:
         return []
     
@@ -325,13 +332,13 @@ def marketplace():
     produtos_disponiveis = []
     for produtor in produtores:
         categorias = obter_categorias(produtor['ip'], produtor['porta'])
-        if categorias:
+        if categorias:  # Se a lista de categorias não estiver vazia
             print(f"Produtor: {produtor['nome']}")
-            for categoria in categorias:
+            for categoria in categorias:  # Itera sobre as categorias retornadas
                 print(f" - {categoria}")
                 if categoria not in categorias_disponiveis:
-                    categorias_disponiveis[categoria] = []
-                categorias_disponiveis[categoria].append(produtor)
+                    categorias_disponiveis[categoria] = []  # Cria uma lista para novas categorias
+                categorias_disponiveis[categoria].append(produtor)  # Adiciona o produtor à lista
     while True:
         categoria_escolhida = input("\nEscolha uma categoria: ")
         if categoria_escolhida in categorias_disponiveis:
