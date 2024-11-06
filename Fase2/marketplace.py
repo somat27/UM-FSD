@@ -12,22 +12,26 @@ ARQUIVO_PRODUTORES = 'BasedeDados/Produtores.json'
 ARQUIVO_PRODUTOS = 'BasedeDados/Produtos.json'
 
 conexoes = {}
-produtos_comprados = []
+produtos_comprados = {}
 threads_heartbeat = {}
 taxas_revenda = {}
 
 taxa_padrao = 20.0
 
+COR_SUCESSO = '\033[92m' 
+COR_ERRO = '\033[91m'    
+COR_RESET = '\033[0m' 
+
 def carregar_json(caminho_arquivo):
     try:
         with open(caminho_arquivo, 'r') as f:
-            conteudo = f.read() 
+            conteudo = f.read()
             return json.loads(conteudo)
     except FileNotFoundError:
-        print(f"Arquivo {caminho_arquivo} não encontrado.")
+        print(f"{COR_ERRO}Erro: {COR_RESET}Arquivo {caminho_arquivo} não encontrado.")
         return []
     except json.JSONDecodeError:
-        print(f"Erro ao decodificar o arquivo JSON {caminho_arquivo}.")
+        print(f"{COR_ERRO}Erro: {COR_RESET}Erro ao decodificar o arquivo JSON {caminho_arquivo}.")
         return []
 
 def gerar_categoria():
@@ -52,43 +56,56 @@ def testar_conexoes():
     ]
 
 def listar_subscricoes():
-    global taxa_padrao
-    produtos_por_produtor = {}
-    for id_produto, nome_produtor, ip, porta, nome_produto, quantidade, preco_compra in produtos_comprados:
-        if id_produto not in produtos_por_produtor:
-            produtos_por_produtor[id_produto] = {
-                "nome": nome_produtor,
-                "ip": ip,
-                "porta": porta,
-                "produtos": []
-            }
-        taxa_revenda = taxas_revenda.get(nome_produto, taxa_padrao)
-        preco_venda = preco_compra + (preco_compra * taxa_revenda / 100)
-        produtos_por_produtor[id_produto]["produtos"].append((nome_produto, quantidade, preco_compra, taxa_revenda, preco_venda))
-    for id_produtor, detalhes in produtos_por_produtor.items():
-        print(f"Produtor: {detalhes['nome']} (ID: {id_produtor}, IP: {detalhes['ip']}, Porta: {detalhes['porta']})")
-        for nome_produto, quantidade, preco_compra, taxa_revenda, preco_venda in detalhes["produtos"]:
-            print(f"  - Nome: {nome_produto}, Quantidade: {quantidade}, Preço de Compra: {preco_compra:.2f}, Preço de Venda: {preco_venda:.2f} ({taxa_revenda}%)")
+    if not produtos_comprados:
+        print(f"{COR_ERRO}Erro: {COR_RESET}Você não tem nenhuma subscrição.")
+        return
+    print("--- Subscrições ---")
+    for nome_produtor, dados_produtor in produtos_comprados.items():
+        ip = dados_produtor["ip"]
+        porta = dados_produtor["porta"]
+        print(f"\nProdutor: {nome_produtor} (IP: {ip}, Porta: {porta})")
+        for produto in dados_produtor["produtos"]:
+            nome_produto = produto["nome"]
+            quantidade = produto["quantidade"]
+            preco_compra = produto["preco"]
+            taxa_revenda = taxas_revenda.get(nome_produto, taxa_padrao)
+            preco_venda = preco_compra + (preco_compra * taxa_revenda / 100)
+            print(f" - {nome_produto} - Quantidade: {quantidade}\n\tPreço de Venda: {preco_venda:.2f}€ ( Preço de Compra: {preco_compra:.2f}€ | Taxa de Revenda: {taxa_revenda}%)")
 
 def definir_taxa_revenda():
     if not produtos_comprados:
-        print("Nenhum produto foi comprado ainda.")
+        print(f"{COR_ERRO}Erro: {COR_RESET}Nenhum produto foi comprado ainda.")
         return
     print("Produtos comprados disponíveis para revenda:")
-    for i, (id_produtor, nome_produtor, ip, porta, nome_produto, quantidade, preco_compra) in enumerate(produtos_comprados, 1):
+    produtos_listados = []
+    for nome_produtor, dados_produtor in produtos_comprados.items():
+        for produto in dados_produtor["produtos"]:
+            produtos_listados.append({
+                "nome_produtor": nome_produtor,
+                "ip": dados_produtor["ip"],
+                "porta": dados_produtor["porta"],
+                "nome_produto": produto["nome"],
+                "quantidade": produto["quantidade"],
+                "preco_compra": produto["preco"]
+            })
+    for i, produto in enumerate(produtos_listados, 1):
+        nome_produto = produto["nome_produto"]
+        nome_produtor = produto["nome_produtor"]
+        quantidade = produto["quantidade"]
         taxa_atual = taxas_revenda.get(nome_produto, 0)
         print(f"{i}. {nome_produto} - Quantidade: {quantidade}, Taxa de Revenda Atual: {taxa_atual}% (Produtor: {nome_produtor})")
     try:
         escolha = int(input("\nEscolha o número do produto para definir a taxa de revenda: "))
-        produto_escolhido = produtos_comprados[escolha - 1]
-        taxa = float(input(f"Digite a taxa de revenda para o produto {produto_escolhido[4]} (em %): "))
+        produto_escolhido = produtos_listados[escolha - 1]
+        taxa = float(input(f"Digite a taxa de revenda para o produto {produto_escolhido['nome_produto']} (em %): "))
+        
         if taxa < 0:
-            print("A taxa não pode ser negativa.")
+            print(f"{COR_ERRO}Erro: {COR_RESET}A taxa não pode ser negativa.")
             return
-        taxas_revenda[produto_escolhido[4]] = taxa
-        print(f"Taxa de revenda de {taxa}% definida para o produto {produto_escolhido[4]}.")
+        taxas_revenda[produto_escolhido["nome_produto"]] = taxa
+        print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Taxa de revenda de {taxa}% definida para o produto {produto_escolhido['nome_produto']}.")
     except (ValueError, IndexError):
-        print("Seleção inválida. Tente novamente.")
+        print(f"{COR_ERRO}Erro: {COR_RESET}Seleção inválida. Tente novamente.")
 
 def comprar_produtos():
     produtos = carregar_json(ARQUIVO_PRODUTOS)
@@ -153,7 +170,7 @@ def remover_produtos_produtor(nome_produtor, ip, porta):
         sock, _ = conexoes[(ip, porta)]
         sock.close()
         del conexoes[(ip, porta)]
-    print(f"Todos os produtos do produtor {nome_produtor} foram removidos.")
+    print(f"{COR_ERRO}Erro: {COR_RESET}Todos os produtos do produtor {nome_produtor} foram removidos.")
 
 def menu_pesquisa_produtos(categoria_desejada):
     global conexoes
@@ -233,14 +250,14 @@ def menu_marketplace():
         if escolha == '1':
             listar_subscricoes()
         elif escolha == '2':
-            comprar_produtos()
+            marketplace()
         elif escolha == '3':
             definir_taxa_revenda()
         elif escolha == '99':
-            print("Saindo do Marketplace. Até logo!")
+            print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Saindo do Marketplace. Até logo!")
             break
         else:
-            print("Opção inválida. Tente novamente.")
+            print(f"{COR_ERRO}Erro: {COR_RESET}Opção inválida. Tente novamente.")
 
 def iniciar():
     marketplace()
@@ -272,7 +289,7 @@ def obter_categorias(ip, porta):
 def obter_produtos_por_categoria(ip, porta, categoria):
     url = f"http://{ip}:{porta}/produtos?categoria={categoria}"
     try:
-        response = requests.get(url,timeout=2)
+        response = requests.get(url)
         return response.json()
     except requests.exceptions.RequestException as e:
         return []
@@ -280,17 +297,16 @@ def obter_produtos_por_categoria(ip, porta, categoria):
 def comprar_produto(ip, porta, produto, quantidade):
     url = f"http://{ip}:{porta}/comprar/{produto}/{quantidade}"
     try:
-        response = requests.get(url,timeout=2)
-        response.raise_for_status() 
-        print(f"Compra realizada com sucesso: {produto} - Quantidade: {quantidade}")
+        response = requests.get(url)
+        print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Compra realizada com sucesso: {produto} - Quantidade: {quantidade}")
     except requests.exceptions.RequestException as e:
-        print(f"Erro ao comprar {produto}: {e}")
+        print(f"{COR_ERRO}Erro: {COR_RESET}Erro ao comprar {produto}: {e}")
 
 def marketplace():
     produtores = obter_produtores()
     categorias_disponiveis = {}
-    produtores_disponiveis = []
     produtos_disponiveis = []
+    global produtos_comprados
     for produtor in produtores:
         categorias = obter_categorias(produtor['ip'], produtor['porta'])
         if categorias:
@@ -312,7 +328,10 @@ def marketplace():
                         print(f"Produtor: {produtor['nome']}")
                         for index, produto in enumerate(produtos, start=1):
                             if all(key in produto for key in ['categoria', 'produto', 'preco', 'quantidade']):
-                                produtos_disponiveis.append(produto)
+                                produtos_disponiveis.append({
+                                    "produtor": produtor,
+                                    "produto": produto
+                                })
                                 print(f"{index} - {produto['produto']}, Preço: {produto['preco']}€, Quantidade: {produto['quantidade']}")
                             else:
                                 print("Erro no formato dos dados do produto:", produto)
@@ -336,16 +355,34 @@ def marketplace():
             print("Por favor, insira números válidos.")
             continue
         for num in numeros_escolhidos:
-            if 1 <= num <= len(produtos_disponiveis):
-                produto = produtos_disponiveis[num - 1]
+            produto_selecionado = produtos_disponiveis[num - 1]
+            produto = produto_selecionado['produto']
+            produtor = produto_selecionado['produtor']
+
+            if produto['quantidade'] == 0:
+                print(f"Produto {produto['produto']} não disponível.")
+            elif 1 <= num <= len(produtos_disponiveis):
                 while True:
                     try:
                         quantidade = int(input(f"Digite a quantidade para {produto['produto']} (disponível: {produto['quantidade']}): "))
                         if 1 <= quantidade <= produto['quantidade']:
-                            produtor = categorias_disponiveis[categoria_escolhida][0] 
                             ip = produtor['ip']
                             porta = produtor['porta']
+                            nome_produtor = produtor['nome']
                             comprar_produto(ip, porta, produto['produto'], quantidade)
+                            if nome_produtor not in produtos_comprados:
+                                produtos_comprados[nome_produtor] = {
+                                    "id_produtor": produtor.get("id", None),
+                                    "ip": ip,
+                                    "porta": porta,
+                                    "produtos": []
+                                }
+                            produtos_comprados[nome_produtor]["produtos"].append({
+                                "nome": produto['produto'],
+                                "quantidade": quantidade,
+                                "preco": produto['preco']
+                            })
+                            print(f"Produto {produto['produto']} comprado com sucesso.")
                             break
                         else:
                             print("Quantidade inválida. Tente novamente.")

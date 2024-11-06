@@ -5,18 +5,16 @@ import threading
 import os
 import time
 import logging
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import contextlib
 import io
 import requests
 
 app = Flask(__name__)
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
 Lock = threading.RLock()
 
-IP_Default = '10.8.0.6'
+IP_Default = '10.8.0.15'
 IP_Gestor = '193.136.11.170'
 Porta_Default = 1025
 Porta_Gestor = 5001
@@ -54,10 +52,16 @@ def gerar_id_ou_porta(IP, PORTA):
             return porta_socket 
         porta_socket += 2
 
+
 def registar_produtor(nome_produtor):
-    global Info_Produtor, IP_Default, IP_Gestor, Porta_Gestor
+    global Info_Produtor, IP_Default, Porta_Default, COR_SUCESSO, COR_ERRO, COR_RESET
+    if not IP_Default or not Porta_Default:
+        print(f"{COR_ERRO}Erro: {COR_RESET}IP ou Porta padrão não estão definidos.")
+        return None
     porta_socket = gerar_id_ou_porta(IP_Default, Porta_Default)
     porta_rest = porta_socket + 1
+    
+    # Define a informação do produtor
     Info_Produtor = {
         "Nome": nome_produtor, 
         "IP": IP_Default, 
@@ -66,20 +70,30 @@ def registar_produtor(nome_produtor):
         "Produtos": []
     }
     print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Produtor '{nome_produtor}' registado.")
+    
+    # Dados a enviar ao servidor
     Post_Produtor = {
         "ip": Info_Produtor["IP"],
         "porta": Info_Produtor["PortaRest"],
         "nome": Info_Produtor["Nome"]
     }
-    response = requests.post(f'http://{IP_Gestor}:{Porta_Gestor}/produtor', json=Post_Produtor)
-    if response.status_code == 200:
-        print(f"{COR_SUCESSO}Sucesso: {COR_RESET}A informação de um produtor foi atualizada com sucesso.")
-    elif response.status_code == 201:
-        print(f"{COR_SUCESSO}Sucesso: {COR_RESET}O novo produtor foi registado com sucesso.")
-    elif response.status_code == 400:
-        print(f"{COR_ERRO}Erro: {COR_RESET}O pedido não foi bem executado, por isso o servidor não foi capaz de executar com sucesso.")
-    else:
-        print(f"Erro inesperado. Código de status: {response.status_code}")
+    
+    # Envia o pedido POST ao servidor
+    try:
+        response = requests.post('http://193.136.11.170:5001/produtor', json=Post_Produtor)
+        
+        if response.status_code == 200:
+            print(f"{COR_SUCESSO}Sucesso: {COR_RESET}A informação do produtor foi atualizada com sucesso.")
+        elif response.status_code == 201:
+            print(f"{COR_SUCESSO}Sucesso: {COR_RESET}O novo produtor foi registado com sucesso.")
+        elif response.status_code == 400:
+            print(f"{COR_ERRO}Erro: {COR_RESET}Pedido inválido. O servidor não conseguiu processar.")
+        else:
+            print(f"{COR_ERRO}Erro inesperado: {COR_RESET}Código de status {response.status_code}")
+    
+    except requests.exceptions.RequestException as e:
+        print(f"{COR_ERRO}Erro de conexão: {COR_RESET}{e}")
+    
     return Info_Produtor
 
 def gerar_itens_para_produtor(Info_Produtor, numero_itens):  
@@ -102,19 +116,21 @@ def listar_produtos_endpoint(cliente_socket, id_produtor):
     produtos = Info_Produtor['Produtos'] if Info_Produtor else []
     resposta = "\n".join(listar_produtos(produtos)) if produtos else "Nenhum produto disponível."
     cliente_socket.sendall(resposta.encode())
-
 def comprar_produto_endpoint(cliente_socket, nome_produto, quantidade):
     global Info_Produtor
     with Lock:
         produto_info = next((prod for prod in Info_Produtor['Produtos'] if prod['Nome'] == nome_produto), None)
+        
         if produto_info and produto_info['Quantidade'] >= quantidade:
-            produto_info['Quantidade'] -= quantidade
+            produto_info['Quantidade'] -= quantidade 
             resposta = f"Compra realizada com sucesso! Você comprou {quantidade} de {nome_produto}."
-            print(f"Cliente comprou {quantidade} de '{nome_produto}'.")
+            print(f"Cliente comprou {quantidade} de '{nome_produto}'. Novo stock: {produto_info['Quantidade']}")
         else:
             resposta = "Produto não encontrado ou quantidade insuficiente."
             print(f"Compra falhou: Produto '{nome_produto}' não encontrado ou quantidade insuficiente.")
-    cliente_socket.sendall(resposta.encode())
+    
+    cliente_socket.sendall(resposta.encode()) 
+
 
 def gerenciar_conexao(cliente_socket, endereco, conexoes):
     try:
@@ -244,7 +260,8 @@ def servidor_produtor(Info_Produtor):
     print(f"{COR_ERRO}Erro: {COR_RESET}Servidor do Produtor '{Info_Produtor['Nome']}' desligado.")
 
 def iniciar_servidor_flask():
-    app.run(port=Info_Produtor["PortaRest"], debug=False, use_reloader=False) 
+    app.run(host=Info_Produtor["IP"], port=Info_Produtor["PortaRest"], debug=False, use_reloader=False)
+
 
 def menu_inicial():
     global Info_Produtor
@@ -268,19 +285,29 @@ def obter_categorias():
         return jsonify(list(categorias_disponiveis)), 200
     return jsonify([]), 200
 
+@app.route('/produtos', methods=['GET'])
+def obter_produtos_por_categoria():
+   
+    categoria = request.args.get('categoria')
+    
+    if not categoria:
+        return jsonify({"erro": "Parâmetro 'categoria' não fornecido"}), 400
 
-@app.route('/produtos/<categoria>', methods=['GET'])
-def obter_produtos_por_categoria(categoria):
-    produtos_encontrados = []
-    if "Produtos" in Info_Produtor:
-        for produto in Info_Produtor["Produtos"]:
-            nova_categoria = produto.get('Categoria')
-            if categoria == nova_categoria:
-                produtos_encontrados.append(produto)
+    produtos_encontrados = [
+        produto for produto in Info_Produtor.get("Produtos", [])
+        if produto.get('Categoria') == categoria  
+    ]
+  
     if produtos_encontrados:
-        return jsonify(produtos_encontrados)
-    else:
-        return jsonify({"erro": f"Nenhum produto encontrado para a categoria '{categoria}'."}), 404
+        return jsonify([{
+            "categoria": produto["Categoria"], 
+            "produto": produto["Nome"],  
+            "quantidade": produto["Quantidade"],
+            "preco": produto["Preco"]
+        } for produto in produtos_encontrados]), 200
+    
+    return jsonify({"erro": "Categoria inexistente"}), 404
+
                 
 if __name__ == "__main__":
     menu_inicial()
