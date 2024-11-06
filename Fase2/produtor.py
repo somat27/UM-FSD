@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 Lock = threading.RLock()
 
-IP_Default = '10.8.0.15'
+IP_Default = '10.8.0.10' 
 IP_Gestor = '193.136.11.170'
 Porta_Default = 1025
 Porta_Gestor = 5001
@@ -60,8 +60,6 @@ def registar_produtor(nome_produtor):
         return None
     porta_socket = gerar_id_ou_porta(IP_Default, Porta_Default)
     porta_rest = porta_socket + 1
-    
-    # Define a informação do produtor
     Info_Produtor = {
         "Nome": nome_produtor, 
         "IP": IP_Default, 
@@ -70,18 +68,13 @@ def registar_produtor(nome_produtor):
         "Produtos": []
     }
     print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Produtor '{nome_produtor}' registado.")
-    
-    # Dados a enviar ao servidor
     Post_Produtor = {
         "ip": Info_Produtor["IP"],
         "porta": Info_Produtor["PortaRest"],
         "nome": Info_Produtor["Nome"]
     }
-    
-    # Envia o pedido POST ao servidor
     try:
         response = requests.post('http://193.136.11.170:5001/produtor', json=Post_Produtor)
-        
         if response.status_code == 200:
             print(f"{COR_SUCESSO}Sucesso: {COR_RESET}A informação do produtor foi atualizada com sucesso.")
         elif response.status_code == 201:
@@ -90,10 +83,8 @@ def registar_produtor(nome_produtor):
             print(f"{COR_ERRO}Erro: {COR_RESET}Pedido inválido. O servidor não conseguiu processar.")
         else:
             print(f"{COR_ERRO}Erro inesperado: {COR_RESET}Código de status {response.status_code}")
-    
     except requests.exceptions.RequestException as e:
         print(f"{COR_ERRO}Erro de conexão: {COR_RESET}{e}")
-    
     return Info_Produtor
 
 def gerar_itens_para_produtor(Info_Produtor, numero_itens):  
@@ -139,7 +130,7 @@ def gerenciar_conexao(cliente_socket, endereco, conexoes):
             while True:
                 data = cliente_socket.recv(1024).decode()
                 if not data:
-                    break
+                    break 
                 if data.startswith("SUBSCREVER_PRODUTO"):
                     _, nome_produto, quantidade = data.split(',', maxsplit=2)
                     quantidade = int(quantidade)
@@ -287,17 +278,13 @@ def obter_categorias():
 
 @app.route('/produtos', methods=['GET'])
 def obter_produtos_por_categoria():
-   
     categoria = request.args.get('categoria')
-    
     if not categoria:
         return jsonify({"erro": "Parâmetro 'categoria' não fornecido"}), 400
-
     produtos_encontrados = [
         produto for produto in Info_Produtor.get("Produtos", [])
         if produto.get('Categoria') == categoria  
     ]
-  
     if produtos_encontrados:
         return jsonify([{
             "categoria": produto["Categoria"], 
@@ -305,9 +292,7 @@ def obter_produtos_por_categoria():
             "quantidade": produto["Quantidade"],
             "preco": produto["Preco"]
         } for produto in produtos_encontrados]), 200
-    
     return jsonify({"erro": "Categoria inexistente"}), 404
-
                 
 if __name__ == "__main__":
     menu_inicial()
