@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 Lock = threading.RLock()
 
-IP_Default = '10.8.0.10' 
+IP_Default = '10.8.0.5' 
 IP_Gestor = '193.136.11.170'
 Porta_Default = 1025
 Porta_Gestor = 5001
@@ -293,6 +293,28 @@ def obter_produtos_por_categoria():
             "preco": produto["Preco"]
         } for produto in produtos_encontrados]), 200
     return jsonify({"erro": "Categoria inexistente"}), 404
+
+@app.route('/comprar/<produto>/<int:quantidade>', methods=['GET'])
+def comprar_produto(produto, quantidade):
+    with Lock: 
+        produto_info = next((prod for prod in Info_Produtor['Produtos'] if prod['Nome'] == produto), None)
+        if produto_info:
+            if produto_info["Quantidade"] >= quantidade:
+                preco_unitario = produto_info["Preco"]
+                preco_total = preco_unitario * quantidade
+                produto_info["Quantidade"] -= quantidade
+                print(f"{quantidade} unidades de '{produto}' compradas por {preco_total:.2f}€.")
+                return jsonify({
+                    "sucesso": f"{quantidade} unidades de {produto} compradas",
+                    "preco_unitario": preco_unitario,
+                    "preco_total": preco_total
+                }), 200
+            else:
+                print(f"Quantidade insuficiente para '{produto}'.")
+                return jsonify({"erro": "Quantidade insuficiente"}), 404
+        else:
+            print(f"Produto '{produto}' não encontrado.")
+            return jsonify({"erro": "Produto não encontrado"}), 404
                 
 if __name__ == "__main__":
     menu_inicial()
