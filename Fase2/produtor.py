@@ -9,12 +9,12 @@ from flask import Flask, jsonify, request
 import contextlib
 import io
 import requests
+import psutil
 
 app = Flask(__name__)
 
 Lock = threading.RLock()
 
-IP_Default = '10.8.0.5' 
 IP_Gestor = '193.136.11.170'
 Porta_Default = 1025
 Porta_Gestor = 5001
@@ -26,6 +26,32 @@ CATEGORIAS_PERMITIDAS = ["Fruta", "Livros", "Roupa", "Ferramentas", "Computadore
 COR_SUCESSO = '\033[92m' 
 COR_ERRO = '\033[91m'    
 COR_RESET = '\033[0m'    
+
+def obter_ip_vpn():
+  
+    for interface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == socket.AF_INET and addr.address.startswith('10.'):
+                return addr.address
+    return None
+
+def obter_ip_ethernet():
+    
+    for interface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == socket.AF_INET and addr.address.startswith('192.168.'):
+                return addr.address
+    return None
+
+IP_Default = obter_ip_vpn()
+if IP_Default:
+    print(f"{COR_SUCESSO}IP VPN detectado: {IP_Default}{COR_RESET}")
+else:
+    IP_Default = obter_ip_ethernet()
+    if IP_Default.startswith('192.168.'):
+        print(f"{COR_SUCESSO}VPN desligada. IP Ethernet detectado: {IP_Default}{COR_RESET}")
+    else:
+        print(f"{COR_ERRO}Nenhum IP da VPN ou Ethernet encontrado. Usando IP padrão: {IP_Default}{COR_RESET}")
 
 def carregar_dados(arquivo):
     with Lock:
