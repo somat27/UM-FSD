@@ -4,6 +4,7 @@ import json
 import threading
 import os
 import time
+import psutil
 
 Lock = threading.RLock()
 
@@ -15,6 +16,10 @@ arquivo_produtores = 'BasedeDados/Produtores.json'
 arquivo_produtos = 'BasedeDados/Produtos.json'
 
 CATEGORIAS_PERMITIDAS = ["Fruta", "Livros", "Roupa", "Ferramentas", "Computadores", "Smartphones", "Filmes", "Sapatos"]
+
+COR_SUCESSO = '\033[92m' 
+COR_ERRO = '\033[91m'    
+COR_RESET = '\033[0m'  
 
 def carregar_dados(arquivo):
     with Lock:
@@ -174,5 +179,18 @@ def menu_inicial():
             print("Saindo...")
             break
 
+
+def obter_ip_vpn():
+    for interface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == socket.AF_INET and addr.address.startswith('10.'):
+                return addr.address
+    return None
+
 if __name__ == "__main__":
-    menu_inicial()
+    IP_Default = obter_ip_vpn()
+    if IP_Default:
+        print(f"{COR_SUCESSO}Sucesso: {COR_RESET}IP VPN detectado: {IP_Default}")
+        menu_inicial()
+    else:
+        print(f"{COR_ERRO}Erro: {COR_RESET}IP VPN não detectado, tente outra vez!")
