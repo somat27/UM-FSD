@@ -370,6 +370,7 @@ def marketplaceRest():
     categorias_disponiveis = {}
     produtos_disponiveis = []
     global produtos_comprados
+    index = 1
     for produtor in produtores:
         categorias = obter_categorias(produtor['ip'], produtor['porta'])
         if categorias:
@@ -389,13 +390,14 @@ def marketplaceRest():
                     produtos = obter_produtos_por_categoria(produtor['ip'], produtor['porta'], categoria_escolhida)
                     if produtos:
                         print(f"Produtor: {produtor['nome']}")
-                        for index, produto in enumerate(produtos, start=1):
+                        for produto in produtos:
                             if all(key in produto for key in ['categoria', 'produto', 'preco', 'quantidade']):
                                 produtos_disponiveis.append({
                                     "produtor": produtor,
                                     "produto": produto
                                 })
                                 print(f"{index} - {produto['produto']}, Preço: {produto['preco']}€, Quantidade: {produto['quantidade']}")
+                                index = index + 1
                             else:
                                 print("Erro no formato dos dados do produto:", produto)
                 except Exception as e:
