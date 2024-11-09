@@ -2,90 +2,32 @@
     {
         "ID": 1,
         "Nome": "Tomas",
-        "IP": "127.0.0.1",
+        "IP": "10.8.0.4",
         "Porta": 1025,
         "Produtos": [
             {
-                "Nome": "Auto-ajuda",
-                "Categoria": "Livros",
-                "Preco": 23.92,
-                "Quantidade": 45
+                "produto": "Formal",
+                "categoria": "Sapatos",
+                "preco": 93.69,
+                "quantidade": 18
             },
             {
-                "Nome": "Alicate",
-                "Categoria": "Ferramentas",
-                "Preco": 10.55,
-                "Quantidade": 85
+                "produto": "Telemovel",
+                "categoria": "Smartphones",
+                "preco": 781.49,
+                "quantidade": 74
             },
             {
-                "Nome": "Uva",
-                "Categoria": "Fruta",
-                "Preco": 2.53,
-                "Quantidade": 81
-            }
-        ]
-    },
-    {
-        "ID": 2,
-        "Nome": "Tomas",
-        "IP": "127.0.0.1",
-        "Porta": 1026,
-        "Produtos": [
-            {
-                "Nome": "Casual",
-                "Categoria": "Sapatos",
-                "Preco": 40.62,
-                "Quantidade": 0
+                "produto": "Ficcao Cientifica",
+                "categoria": "Livros",
+                "preco": 33.53,
+                "quantidade": 35
             },
             {
-                "Nome": "Sapatos",
-                "Categoria": "Roupa",
-                "Preco": 40.45,
-                "Quantidade": 33
-            },
-            {
-                "Nome": "Banana",
-                "Categoria": "Fruta",
-                "Preco": 0.79,
-                "Quantidade": 12
-            }
-        ]
-    },
-    {
-        "ID": 3,
-        "Nome": "Tomas",
-        "IP": "127.0.0.1",
-        "Porta": 1027,
-        "Produtos": [
-            {
-                "Nome": "Alicate",
-                "Categoria": "Ferramentas",
-                "Preco": 4.32,
-                "Quantidade": 18
-            },
-            {
-                "Nome": "Sapatos",
-                "Categoria": "Roupa",
-                "Preco": 58.52,
-                "Quantidade": 82
-            },
-            {
-                "Nome": "Maca",
-                "Categoria": "Fruta",
-                "Preco": 0.6,
-                "Quantidade": 52
-            },
-            {
-                "Nome": "Documentário",
-                "Categoria": "Filmes",
-                "Preco": 13.66,
-                "Quantidade": 69
-            },
-            {
-                "Nome": "T-shirt",
-                "Categoria": "Roupa",
-                "Preco": 5.39,
-                "Quantidade": 176
+                "produto": "Comedia",
+                "categoria": "Filmes",
+                "preco": 14.69,
+                "quantidade": 79
             }
         ]
     }

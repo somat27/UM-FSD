@@ -33,7 +33,7 @@
             "Quantidade": [5, 200]
         },
         {
-            "Nome_Produto": "Ficção Científica",
+            "Nome_Produto": "Ficcao Cientifica",
             "Preco": [15, 35],
             "Quantidade": [5, 150]
         },
@@ -43,7 +43,7 @@
             "Quantidade": [10, 100]
         },
         {
-            "Nome_Produto": "História",
+            "Nome_Produto": "Historia",
             "Preco": [12, 40],
             "Quantidade": [5, 120]
         }
@@ -55,7 +55,7 @@
             "Quantidade": [10, 200]
         },
         {
-            "Nome_Produto": "Calças",
+            "Nome_Produto": "Calcas",
             "Preco": [20, 50],
             "Quantidade": [10, 150]
         },
@@ -94,21 +94,21 @@
     ],
     "Computadores": [
         {
-            "Nome_Produto": "Portátil",
+            "Nome_Produto": "Portatil",
             "Preco": [500, 2000],
             "Quantidade": [1, 30]
         }
     ],
     "Smartphones": [
         {
-            "Nome_Produto": "Telemóvel",
+            "Nome_Produto": "Telemovel",
             "Preco": [100, 1000],
             "Quantidade": [1, 50]
         }
     ],
     "Filmes": [
         {
-            "Nome_Produto": "Ação",
+            "Nome_Produto": "Acao",
             "Preco": [10, 20],
             "Quantidade": [1, 100]
         },
@@ -118,12 +118,12 @@
             "Quantidade": [1, 100]
         },
         {
-            "Nome_Produto": "Comédia",
+            "Nome_Produto": "Comedia",
             "Preco": [10, 20],
             "Quantidade": [1, 100]
         },
         {
-            "Nome_Produto": "Documentário",
+            "Nome_Produto": "Documentario",
             "Preco": [10, 20],
             "Quantidade": [1, 100]
         }
