@@ -54,7 +54,7 @@ def ObterCategoriasRest():
         PORTA = ProdutorRest['porta']
         CategoriaProdutorDisponivel = None
         for Produtor in CategoriasProdutorRestDisponiveis:
-            if Produtor["IP"] == IP and Produtor["porta"] == PORTA:
+            if Produtor["IP"] == IP and Produtor["PORTA"] == PORTA:
                 CategoriaProdutorDisponivel = Produtor
                 break
         if not CategoriaProdutorDisponivel:
@@ -145,10 +145,10 @@ def ObterProdutosPorCategoria(Produtor, CategoriaEscolhida):
             if response.status_code == 200:
                 return response.json()
             else:
-                print(f"Erro na requisição para {Produtor['IP']}:{Produtor['Porta']}. Status code: {response.status_code}")
+                print(f"Erro na requisição para {Produtor['IP']}:{Produtor['PORTA']}. Status code: {response.status_code}")
                 return []
         except requests.exceptions.RequestException as e:
-            print(f"Erro ao tentar conectar ao produtor {Produtor['IP']}:{Produtor['Porta']}. Detalhes: {e}")
+            print(f"Erro ao tentar conectar ao produtor {Produtor['IP']}:{Produtor['PORTA']}. Detalhes: {e}")
             return []
 
 def ListarProdutos(ProdutosCategoriaEscolhida):

@@ -30,5 +30,31 @@
                 "quantidade": 79
             }
         ]
+    },
+    {
+        "ID": 2,
+        "Nome": "Tomas",
+        "IP": "10.8.0.28",
+        "Porta": 1026,
+        "Produtos": [
+            {
+                "produto": "Auto-ajuda",
+                "categoria": "Livros",
+                "preco": 23.92,
+                "quantidade": 86
+            },
+            {
+                "produto": "T-shirt",
+                "categoria": "Roupa",
+                "preco": 7.43,
+                "quantidade": 131
+            },
+            {
+                "produto": "Desportivo",
+                "categoria": "Sapatos",
+                "preco": 70.03,
+                "quantidade": 101
+            }
+        ]
     }
 ]
