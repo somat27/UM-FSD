@@ -1,0 +1,148 @@
+{
+    "Fruta": [
+        {
+            "Nome_Produto": "Banana",
+            "Preco": [0.2, 1],
+            "Quantidade": [5, 100]
+        },
+        {
+            "Nome_Produto": "Laranja",
+            "Preco": [0.3, 0.8],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Maca",
+            "Preco": [0.4, 1],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Morango",
+            "Preco": [0.8, 2],
+            "Quantidade": [5, 50]
+        },
+        {
+            "Nome_Produto": "Uva",
+            "Preco": [1, 3],
+            "Quantidade": [5, 50]
+        }
+    ],
+    "Livros": [
+        {
+            "Nome_Produto": "Romance",
+            "Preco": [10, 30],
+            "Quantidade": [5, 200]
+        },
+        {
+            "Nome_Produto": "Ficcao Cientifica",
+            "Preco": [15, 35],
+            "Quantidade": [5, 150]
+        },
+        {
+            "Nome_Produto": "Auto-ajuda",
+            "Preco": [8, 25],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Historia",
+            "Preco": [12, 40],
+            "Quantidade": [5, 120]
+        }
+    ],
+    "Roupa": [
+        {
+            "Nome_Produto": "T-shirt",
+            "Preco": [5, 20],
+            "Quantidade": [10, 200]
+        },
+        {
+            "Nome_Produto": "Calcas",
+            "Preco": [20, 50],
+            "Quantidade": [10, 150]
+        },
+        {
+            "Nome_Produto": "Casaco",
+            "Preco": [30, 100],
+            "Quantidade": [5, 100]
+        },
+        {
+            "Nome_Produto": "Sapatos",
+            "Preco": [20, 80],
+            "Quantidade": [10, 100]
+        }
+    ],
+    "Ferramentas": [
+        {
+            "Nome_Produto": "Chave de Fendas",
+            "Preco": [2, 10],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Martelo",
+            "Preco": [5, 15],
+            "Quantidade": [5, 50]
+        },
+        {
+            "Nome_Produto": "Alicate",
+            "Preco": [3, 12],
+            "Quantidade": [5, 40]
+        },
+        {
+            "Nome_Produto": "Serra",
+            "Preco": [8, 25],
+            "Quantidade": [5, 20]
+        }
+    ],
+    "Computadores": [
+        {
+            "Nome_Produto": "Portatil",
+            "Preco": [500, 2000],
+            "Quantidade": [1, 30]
+        }
+    ],
+    "Smartphones": [
+        {
+            "Nome_Produto": "Telemovel",
+            "Preco": [100, 1000],
+            "Quantidade": [1, 50]
+        }
+    ],
+    "Filmes": [
+        {
+            "Nome_Produto": "Acao",
+            "Preco": [10, 20],
+            "Quantidade": [1, 100]
+        },
+        {
+            "Nome_Produto": "Drama",
+            "Preco": [10, 20],
+            "Quantidade": [1, 100]
+        },
+        {
+            "Nome_Produto": "Comedia",
+            "Preco": [10, 20],
+            "Quantidade": [1, 100]
+        },
+        {
+            "Nome_Produto": "Documentario",
+            "Preco": [10, 20],
+            "Quantidade": [1, 100]
+        }
+    ],
+    "Sapatos": [
+        {
+            "Nome_Produto": "Casual",
+            "Preco": [20, 60],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Desportivo",
+            "Preco": [25, 80],
+            "Quantidade": [10, 100]
+        },
+        {
+            "Nome_Produto": "Formal",
+            "Preco": [30, 100],
+            "Quantidade": [5, 50]
+        }
+    ]
+}
