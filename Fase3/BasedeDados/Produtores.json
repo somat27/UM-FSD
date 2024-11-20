@@ -6,54 +6,28 @@
         "Porta": 1025,
         "Produtos": [
             {
-                "produto": "Formal",
-                "categoria": "Sapatos",
-                "preco": 93.69,
-                "quantidade": 18
-            },
-            {
-                "produto": "Telemovel",
-                "categoria": "Smartphones",
-                "preco": 781.49,
-                "quantidade": 74
-            },
-            {
-                "produto": "Ficcao Cientifica",
-                "categoria": "Livros",
-                "preco": 33.53,
-                "quantidade": 35
-            },
-            {
-                "produto": "Comedia",
-                "categoria": "Filmes",
-                "preco": 14.69,
-                "quantidade": 79
-            }
-        ]
-    },
-    {
-        "ID": 2,
-        "Nome": "Tomas",
-        "IP": "10.8.0.28",
-        "Porta": 1026,
-        "Produtos": [
-            {
                 "produto": "Auto-ajuda",
                 "categoria": "Livros",
-                "preco": 23.92,
-                "quantidade": 86
+                "preco": 22.49,
+                "quantidade": 92
             },
             {
-                "produto": "T-shirt",
+                "produto": "Martelo",
+                "categoria": "Ferramentas",
+                "preco": 13.45,
+                "quantidade": 0
+            },
+            {
+                "produto": "Morango",
+                "categoria": "Fruta",
+                "preco": 0.83,
+                "quantidade": 49
+            },
+            {
+                "produto": "Sapatos",
                 "categoria": "Roupa",
-                "preco": 7.43,
-                "quantidade": 131
-            },
-            {
-                "produto": "Desportivo",
-                "categoria": "Sapatos",
-                "preco": 70.03,
-                "quantidade": 101
+                "preco": 70.67,
+                "quantidade": 95
             }
         ]
     }

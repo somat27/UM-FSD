@@ -33,21 +33,21 @@ def salvar_dados(arquivo, dados):
         with open(arquivo, 'w', encoding='utf-8') as f:
             json.dump(dados, f, ensure_ascii=False, indent=4)
 
-def gerar_id_ou_porta(lista, chave, valor_default):
+def gerar_id_ou_porta_socket(lista, chave, valor_default):
     valores = [int(item[chave]) for item in lista if item.get(chave) and str(item[chave]).isdigit()]
     return max(valores) + 1 if valores else valor_default
 
 def registar_produtor(nome_produtor, IP_Default):
     produtores = carregar_dados(arquivo_produtores)
-    id_produtor = gerar_id_ou_porta(produtores, 'ID', 1)
-    porta_socket = gerar_id_ou_porta(produtores, 'Porta', Porta_Default)
+    id_produtor = gerar_id_ou_porta_socket(produtores, 'ID', 1)
+    porta_socket = gerar_id_ou_porta_socket(produtores, 'Porta', Porta_Default)
     novo_produtor = {"ID": id_produtor, "Nome": nome_produtor, "IP": IP_Default, "Porta": porta_socket, "Produtos": []}
     produtores.append(novo_produtor)
     salvar_dados(arquivo_produtores, produtores)
     print(f"Produtor '{nome_produtor}' registrado com ID {id_produtor} e Porta {porta_socket}.")
     return id_produtor, porta_socket
 
-def gerar_itens_para_produtor(id_produtor, numero_itens):   
+def gerar_itens_para_produtor_socket(id_produtor, numero_itens):   
     produtos = carregar_dados(arquivo_produtos)
     produtores = carregar_dados(arquivo_produtores)
     todos_produtos = [dict(produto, Categoria=categoria) for categoria, lista_produtos in produtos.items() for produto in lista_produtos]
@@ -66,7 +66,7 @@ def gerar_itens_para_produtor(id_produtor, numero_itens):
     print(f"{numero_itens} itens gerados.")
 
 
-def listar_produtos(produtos):
+def listar_produtos_socket(produtos):
     return [f"{produto['Nome']} - Categoria: {produto.get('Categoria', 'Desconhecida')} - Preço: {produto['Preco']:.2f} - Quantidade: {produto['Quantidade']}" for produto in produtos]
 
 def adicionar_stock_periodicamente(id_produtor):
@@ -91,7 +91,7 @@ def listar_produtos_endpoint(cliente_socket, id_produtor):
     produtores = carregar_dados(arquivo_produtores)
     produtor = next((p for p in produtores if p['ID'] == id_produtor), None)
     produtos = produtor['Produtos'] if produtor else []
-    resposta = "\n".join(listar_produtos(produtos)) if produtos else "Nenhum produto disponível."
+    resposta = "\n".join(listar_produtos_socket(produtos)) if produtos else "Nenhum produto disponível."
     cliente_socket.sendall(resposta.encode())
 
 def comprar_produto_endpoint(cliente_socket, id_produtor, nome_produto, quantidade):
@@ -229,7 +229,7 @@ def menu_inicial(IP_Default):
         if opcao == '1':
             nome_produtor = input("Digite o nome do novo produtor: ")
             id_produtor, porta = registar_produtor(nome_produtor, IP_Default)
-            gerar_itens_para_produtor(id_produtor, random.randint(3, 5))
+            gerar_itens_para_produtor_socket(id_produtor, random.randint(3, 5))
             servidor_produtor(nome_produtor, id_produtor, porta, IP_Default)
             break
         elif opcao == '2':
