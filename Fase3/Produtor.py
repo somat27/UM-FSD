@@ -17,8 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 # ------------ Configuração Global ------------ #
 app = Flask(__name__)
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.CRITICAL)
+logging.basicConfig(level=logging.DEBUG)
 Lock = threading.RLock()
 IP_Default = '127.0.0.1'
 Porta_Default_Socket = 1025
@@ -33,7 +32,13 @@ Notificacoes_Rest = []
 COR_SUCESSO = '\033[92m' 
 COR_ERRO = '\033[91m'    
 COR_RESET = '\033[0m' 
+COR_DEBUG = '\033[94m'
+DEBUG = False
 # ------------ Configuração Global ------------ #
+
+def debug_print(mensagem):
+    if DEBUG:
+        print(f"{COR_DEBUG}DEBUG: {COR_RESET}{mensagem}")
 
 # ------------ Routes Rest ------------ #
 @app.route('/categorias', methods=['GET'])
@@ -96,39 +101,59 @@ def comprar_produto(produto, quantidade):
         
 @app.route('/secure/categorias', methods=['GET'])
 def obter_categorias_seguranca():
-    categorias = [cat['Categoria'] for cat in Info_Produtor.get("Produtos", [])]
-    mensagem = json.dumps(categorias)
-    assinatura = assinar_mensagem(mensagem)
+    try:
+        categorias = list(set(prod['Categoria'] for prod in Info_Produtor.get("Produtos", [])))
+        assinatura = assinar_mensagem(categorias)
 
-    return jsonify({
-        "mensagem": categorias,
-        "assinatura": assinatura.decode('cp437'),
-        "certificado": open("certificado.pem", "r").read()
-    }), 200
+        certificado_path = "certificado.pem"
+        if not os.path.exists(certificado_path):
+            raise FileNotFoundError(f"Certificado não encontrado em {certificado_path}")
+        certificado = open(certificado_path, "r").read()
+
+        return jsonify({
+            "mensagem": categorias,
+            "assinatura": assinatura.decode('cp437'),
+            "certificado": certificado
+        }), 200
+    except Exception as e:
+        logging.error(f"Erro no endpoint /secure/categorias: {e}")
+        return jsonify({"erro": str(e)}), 500
 
 @app.route('/secure/produtos', methods=['GET'])
 def obter_produtos_seguranca():
-    categoria = request.args.get('categoria')
-    produtos = [prod for prod in Info_Produtor.get("Produtos", []) if prod['Categoria'] == categoria]
-
-    if produtos:
-        mensagem = json.dumps(produtos)
-        assinatura = assinar_mensagem(mensagem)
+    try:
+        categoria = request.args.get('categoria')
+        produtos = [
+            {
+                "categoria": prod['Categoria'],
+                "produto": prod['Nome'],
+                "quantidade": prod['Quantidade'],
+                "preco": prod['Preco']
+            }
+            for prod in Info_Produtor.get("Produtos", []) if prod['Categoria'] == categoria
+        ]
+        assinatura = assinar_mensagem(produtos)
+        certificado_path = "certificado.pem"
+        if not os.path.exists(certificado_path):
+            raise FileNotFoundError(f"Certificado não encontrado em {certificado_path}")
+        certificado = open(certificado_path, "r").read()
+        
         return jsonify({
             "mensagem": produtos,
             "assinatura": assinatura.decode('cp437'),
-            "certificado": open("certificado.pem", "r").read()
-        }), 200
-    else:
-        return jsonify({
-            "mensagem": "Categoria inexistente",
-            "assinatura": assinar_mensagem("Categoria inexistente").decode('cp437'),
-            "certificado": open("certificado.pem", "r").read()
-        }), 404
+            "certificado": certificado
+        }), 200 if produtos else 404
+    except Exception as e:
+            logging.error(f"Erro no endpoint /secure/produtos: {e}")
+            return jsonify({"erro": str(e)}), 500
     
 @app.route('/secure/comprar/<produto>/<int:quantidade>', methods=['POST'])
 def comprar_produto_seguranca(produto, quantidade):
     with Lock:
+        certificado_path = "certificado.pem"
+        if not os.path.exists(certificado_path):
+            raise FileNotFoundError(f"Certificado não encontrado em {certificado_path}")
+        certificado = open(certificado_path, "r").read()
         produto_info = next((p for p in Info_Produtor["Produtos"] if p["Nome"] == produto), None)
         if produto_info and produto_info["Quantidade"] >= quantidade:
             produto_info["Quantidade"] -= quantidade
@@ -137,24 +162,51 @@ def comprar_produto_seguranca(produto, quantidade):
             return jsonify({
                 "mensagem": mensagem,
                 "assinatura": assinatura.decode('cp437'),
-                "certificado": open("certificado.pem", "r").read()
+                "certificado": certificado
             }), 200
         else:
             mensagem = "Quantidade insuficiente ou produto inexistente."
+            assinatura = assinar_mensagem(mensagem)
             return jsonify({
                 "mensagem": mensagem,
-                "assinatura": assinar_mensagem(mensagem).decode('cp437'),
-                "certificado": open("certificado.pem", "r").read()
+                "assinatura": assinatura.decode('cp437'),
+                "certificado": certificado
             }), 404
 # ------------ Routes Rest ------------ #
 
 # ------------ Produtor Rest ------------ #
+def reregistrar_produtor_periodicamente(nome_produtor):
+    while True:
+        try:
+            response = requests.post('http://193.136.11.170:5001/produtor_certificado', json={
+                "ip": Info_Produtor["IP"],
+                "porta": Info_Produtor["Porta"],
+                "nome": nome_produtor,
+                "pubKey": open("chave_publica.pem", "r").read()
+            })
+
+            if response.status_code in (200, 201):
+                certificado = response.text
+                with open("certificado.pem", "w") as f:
+                    f.write(certificado)
+                print("Certificado recebido e salvo com sucesso.")
+            else:
+                print(f"Erro ao re-registrar produtor: {response.status_code} - {response.text}")
+        except requests.exceptions.RequestException as e:
+            debug_print(f"Erro ao tentar re-registrar o produtor: {e}")
+        time.sleep(60)
+
 def assinar_mensagem(mensagem):
     with open("chave_privada.pem", "rb") as f:
         private_key = serialization.load_pem_private_key(f.read(), password=None)
     
+    if isinstance(mensagem, list) or isinstance(mensagem, dict):
+        mensagem = json.dumps(mensagem, separators=(',', ':'), sort_keys=True).encode('utf-8')
+    elif isinstance(mensagem, str):
+        mensagem = mensagem.encode('utf-8')
+    
     assinatura = private_key.sign(
-        mensagem.encode('utf-8'),
+        mensagem,
         padding.PKCS1v15(),
         hashes.SHA256()
     )
@@ -188,7 +240,7 @@ def registar_produtor_rest(nome_produtor):
         "Nome": nome_produtor,
         "IP": IP_Default,
         "Porta": porta,
-        "Produtos": []  # Inicializa a lista de produtos
+        "Produtos": []
     }
 
     Post_Produtor = {
@@ -204,15 +256,15 @@ def registar_produtor_rest(nome_produtor):
     try:
         response = requests.post('http://193.136.11.170:5001/produtor_certificado', json=Post_Produtor)
         if response.status_code in (200, 201):
-            certificado = response.text  # Certificado recebido do gestor
+            certificado = response.text
             with open("certificado.pem", "w") as f:
                 f.write(certificado)
             print("Certificado recebido e salvo com sucesso.")
         else:
             print(f"Erro ao registar produtor: {response.status_code} - {response.text}")
     except requests.exceptions.RequestException as e:
-        print(f"Erro de conexão: {e}")
-        return None  # Retorna None em caso de erro de conexão
+        debug_print(f"Erro de conexão: {e}")
+        return None 
     return Info_Produtor
 
 def gerar_itens_para_produtor_rest(Info_Produtor, numero_itens):  
@@ -359,6 +411,7 @@ def menu_rest():
         nome_produtor = input("Digite o nome do produtor: ")
         Info_Produtor = registar_produtor_rest(nome_produtor)
         gerar_itens_para_produtor_rest(Info_Produtor, random.randint(3, 5))
+        threading.Thread(target=reregistrar_produtor_periodicamente, args=(nome_produtor,), daemon=True).start()
         threading.Thread(target=iniciar_servidor_flask).start()
         time.sleep(3)
         threading.Thread(target=menu_gestao_produtos).start()
@@ -504,7 +557,7 @@ def listar_produtos_por_categoria(cliente_socket, id_produtor, categoria):
             resposta = json.dumps({"erro": f"Produtor com ID {id_produtor} não encontrado."}, ensure_ascii=False)
         cliente_socket.sendall(resposta.encode('utf-8'))
     except Exception as e:
-        print(f"Erro ao listar produtos por categoria: {e}")
+        debug_print(f"Erro ao listar produtos por categoria: {e}")
         cliente_socket.sendall(f"Erro ao listar produtos: {e}".encode('utf-8'))
 
 def gerenciar_conexao(cliente_socket, endereco, conexoes, produtos_marketplace, id_produtor):
@@ -522,7 +575,7 @@ def gerenciar_conexao(cliente_socket, endereco, conexoes, produtos_marketplace, 
                         print(f"Listar produtos na categoria: {categoria.strip()}")
                         listar_produtos_por_categoria(cliente_socket, id_produtor, categoria.strip())
                     except Exception as e:
-                        print(f"Erro ao processar LISTAR_PRODUTOS_CATEGORIA: {e}")
+                        debug_print(f"Erro ao processar LISTAR_PRODUTOS_CATEGORIA: {e}")
                 else:
                     if data.startswith("SUBSCREVER_PRODUTO"):
                         try:
@@ -531,7 +584,7 @@ def gerenciar_conexao(cliente_socket, endereco, conexoes, produtos_marketplace, 
                             produtos_marketplace.setdefault(endereco, []).append((nome_produto.strip(), quantidade))
                             comprar_produto_endpoint(cliente_socket, id_produtor, nome_produto.strip(), quantidade)
                         except Exception as e:
-                            print(f"Erro ao processar SUBSCREVER_PRODUTO: {e}")
+                            debug_print(f"Erro ao processar SUBSCREVER_PRODUTO: {e}")
                     elif data.startswith("LISTAR_PRODUTOS"):
                         listar_produtos_endpoint(cliente_socket, id_produtor)
                     elif data.startswith("HEARTBEAT"):
@@ -539,7 +592,7 @@ def gerenciar_conexao(cliente_socket, endereco, conexoes, produtos_marketplace, 
                     elif data.startswith("LISTAR_CATEGORIAS"):
                         listar_categorias(cliente_socket, id_produtor)     
     except Exception as e:
-        print(f"Erro na conexão com {endereco}: {e}")
+        debug_print(f"Erro na conexão com {endereco}: {e}")
     finally:
         print(f"Conexão encerrada com {endereco}.")
         cliente_socket.close()
