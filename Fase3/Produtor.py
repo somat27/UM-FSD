@@ -10,14 +10,14 @@ from flask import Flask, jsonify, request
 import requests
 import psutil
 import time
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import padding
 # ------------ Imports ------------ #
 
 # ------------ Configuração Global ------------ #
 app = Flask(__name__)
-logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.CRITICAL)
 Lock = threading.RLock()
 IP_Default = '127.0.0.1'
 Porta_Default_Socket = 1025
@@ -201,13 +201,16 @@ def assinar_mensagem(mensagem):
         private_key = serialization.load_pem_private_key(f.read(), password=None)
     
     if isinstance(mensagem, list) or isinstance(mensagem, dict):
-        mensagem = json.dumps(mensagem, separators=(',', ':'), sort_keys=True).encode('utf-8')
+        mensagem = json.dumps(mensagem).encode('utf-8')
     elif isinstance(mensagem, str):
         mensagem = mensagem.encode('utf-8')
     
     assinatura = private_key.sign(
         mensagem,
-        padding.PKCS1v15(),
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
         hashes.SHA256()
     )
     return assinatura

@@ -19,7 +19,7 @@ ARQUIVO_PRODUTORES = 'BasedeDados/Produtores.json'
 subscricoes_compradas = {}
 taxas_revenda = {}     
 taxa_padrao = 10.0
-DEBUG = False
+DEBUG = True
 # ------------ Configuração Global ------------ #
 
 def debug_print(mensagem):
@@ -96,7 +96,7 @@ def verificar_assinatura_resposta(certificado_produtor, assinatura, mensagem):
     assinatura_codificada = assinatura.encode('cp437')
     
     if isinstance(mensagem, list) or isinstance(mensagem, dict):
-        mensagem = json.dumps(mensagem, separators=(',', ':'), sort_keys=True).encode('utf-8')
+        mensagem = json.dumps(mensagem).encode('utf-8')
     elif isinstance(mensagem, str):
         mensagem = mensagem.encode('utf-8')
 
@@ -104,7 +104,10 @@ def verificar_assinatura_resposta(certificado_produtor, assinatura, mensagem):
         chave_publica_produtor.verify(
             assinatura_codificada,
             mensagem,
-            padding.PKCS1v15(),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
             hashes.SHA256()
         )
         debug_print("Assinatura da resposta é válida.")
@@ -129,7 +132,7 @@ def ObterCategoriasSegurasProdutorRest(IP, PORTA):
             if dados and "mensagem" in dados and "assinatura" in dados and "certificado" in dados:
                 assinatura = dados["assinatura"]
                 certificado = dados["certificado"]
-                
+                print(f"{IP}:{PORTA}")
                 verificar_validade_certificado(certificado)
                 if verificar_assinatura_resposta(certificado, assinatura, dados["mensagem"]):
                     return dados["mensagem"]
@@ -350,11 +353,18 @@ def ComprarProdutos(ProdutosCategoriaEscolhida, produtos_escolhidos):
                             "produtos": []
                         }
 
-                    subscricoes_compradas[nome_produtor]["produtos"].append({
-                        "nome": produto['produto'],
-                        "quantidade": quantidade_desejada,
-                        "preco": produto['preco']
-                    })
+                    produto_existente = next(
+                        (p for p in subscricoes_compradas[nome_produtor]["produtos"] if p["nome"] == produto['produto']), None
+                    )
+
+                    if produto_existente:
+                        produto_existente["quantidade"] += quantidade_desejada
+                    else:
+                        subscricoes_compradas[nome_produtor]["produtos"].append({
+                            "nome": produto['produto'],
+                            "quantidade": quantidade_desejada,
+                            "preco": produto['preco']
+                        })
 
                     print(f"{quantidade_desejada} unidades de {produto['produto']} compradas com sucesso.")
                 else:
@@ -456,8 +466,9 @@ def main():
         for Produtor in Categorias:
             if 'Categorias' in Produtor and CategoriaEscolhida in Produtor['Categorias']:
                 ProdutoresComCategoriaEscolhida.append(Produtor)
-
+                
         for Produtor in ProdutoresComCategoriaEscolhida:
+            print(Produtor)
             Produtos = ObterProdutosPorCategoria(Produtor, CategoriaEscolhida)
             if Produtos:
                 ProdutorComProdutos = {
