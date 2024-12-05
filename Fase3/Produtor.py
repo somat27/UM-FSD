@@ -193,7 +193,7 @@ def registar_produtor_seguro_periodicamente(nome_produtor):
             else:
                 print(f"Erro ao registrar produtor: {response.status_code} - {response.text}")
         except requests.exceptions.RequestException as e:
-            debug_print(f"Erro ao tentar registrar o produtor: {e}")
+            debug_print(f"Erro ao tentar registrar o produtor: {e}") 
         time.sleep(60)
 
 def registar_produtor_nao_seguro_periodicamente(nome_produtor):
@@ -456,11 +456,11 @@ def adicionar_notificacao(mensagem):
             porta_cliente = request.host.split(':')[-1]
             notificacao_completa = f"{mensagem} (IP: {ip_cliente}, Porta: {porta_cliente})"
         else:
-            notificacao_completa = mensagem  # Mensagem de sistema (sem contexto de requisição)
+            notificacao_completa = mensagem  
 
         Notificacoes_Rest.append(notificacao_completa)
         print(f"Notificação adicionada: {notificacao_completa}")
-    except RuntimeError:  # Sem contexto de requisição
+    except RuntimeError: 
         Notificacoes_Rest.append(mensagem)
         print(f"Notificação de sistema adicionada: {mensagem}")
 

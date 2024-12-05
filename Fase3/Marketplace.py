@@ -579,7 +579,6 @@ def main():
             exibir_erro(f"Sem produtos disponíveis na categoria '{CategoriaEscolhida}'. Tente novamente.")
     else:
         exibir_erro("Sem categorias disponíveis. Tente novamente.")
-
 # ------------ Funções Globais ------------ #
 
 if __name__ == "__main__":
