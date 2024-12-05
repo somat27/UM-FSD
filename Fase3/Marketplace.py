@@ -2,6 +2,7 @@
 import json
 import socket
 import time
+import psutil
 import requests
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
@@ -19,19 +20,29 @@ ARQUIVO_PRODUTORES = 'BasedeDados/Produtores.json'
 subscricoes_compradas = {}
 taxas_revenda = {}     
 taxa_padrao = 10.0
-DEBUG = True
+DEBUG = False
 # ------------ Configuração Global ------------ #
 
 def debug_print(mensagem):
     if DEBUG:
         print(f"{COR_DEBUG}DEBUG: {COR_RESET}{mensagem}")
+    
+def exibir_erro(mensagem):
+    print(f"{COR_ERRO}Erro: {COR_RESET}{mensagem}")
+    
+def exibir_sucesso(mensagem):
+    print(f"{COR_SUCESSO}Sucesso: {COR_RESET}{mensagem}")
 
 # ------------ Funções REST ------------ #
 def ObterProdutoresRest():
     URL = "http://193.136.11.170:5001/produtor"
     try:
         response = requests.get(URL, timeout=2)
-        return response.json() 
+        produtores = response.json()
+
+        for produtor in produtores:
+            produtor['Conexao'] = "REST Seguro" if produtor.get('secure') == 1 else "REST Não Seguro"
+        return produtores
     except requests.exceptions.RequestException as e:
         debug_print(f"Erro ao obter produtores REST: {e}")
         return []
@@ -43,25 +54,43 @@ def ObterCategoriasRest():
         IP = ProdutorRest.get('ip')
         PORTA = ProdutorRest.get('porta')
         Nome = ProdutorRest.get('nome')
+        Conexao = ProdutorRest.get('Conexao', 'REST Desconhecido')
 
         if not IP or not PORTA:
             debug_print(f"Produtor inválido recebido do servidor central: {ProdutorRest}")
             continue
 
-        CategoriasSeguras = ObterCategoriasSegurasProdutorRest(IP, PORTA)
+        if Conexao == "REST Seguro":
+            Categorias = ObterCategoriasSegurasProdutorRest(IP, PORTA)
+        else:
+            Categorias = ObterCategoriasNaoSegurasProdutorRest(IP, PORTA)
 
-        if CategoriasSeguras:
+        if Categorias:
             CategoriasProdutorRestDisponiveis.append({
                 "Nome": Nome,
                 "IP": IP,
                 "PORTA": PORTA,
-                "Conexao": "REST",
-                "Categorias": CategoriasSeguras
+                "Conexao": Conexao,
+                "Categorias": Categorias
             })
         else:
             debug_print(f"Produtor {Nome} ({IP}:{PORTA}) não retornou categorias válidas.")
 
     return CategoriasProdutorRestDisponiveis
+
+def ObterCategoriasNaoSegurasProdutorRest(IP, PORTA):
+    URL = f"http://{IP}:{PORTA}/categorias" 
+    try:
+        response = requests.get(URL, timeout=5) 
+        if response.status_code == 200:
+            return response.json()
+        else:
+            debug_print(f"Erro ao obter categorias não seguras de {IP}:{PORTA} - Status: {response.status_code}")
+            return []
+    except requests.exceptions.RequestException as e:
+        debug_print(f"Erro ao ligar a {IP}:{PORTA} (Não Seguro): {e}")
+        return []
+
 
 def carregar_certificado_gestor_do_ficheiro():
     with open("manager_public_key.pem", 'rb') as f:
@@ -114,8 +143,8 @@ def verificar_assinatura_resposta(certificado_produtor, assinatura, mensagem):
     except InvalidSignature:
         return False
     except Exception as e:
-        debug_print(f"Falha na verificação da assinatura. Tipo do erro: {type(e)}")
-        debug_print(f"Detalhes do erro: {repr(e)}")
+        debug_print(f"Falha na verificação da assinatura. Tipo do Erro: {type(e)}")
+        debug_print(f"Detalhes do Erro: {repr(e)}")
         return False
     return True
 
@@ -132,7 +161,7 @@ def ObterCategoriasSegurasProdutorRest(IP, PORTA):
             if dados and "mensagem" in dados and "assinatura" in dados and "certificado" in dados:
                 assinatura = dados["assinatura"]
                 certificado = dados["certificado"]
-                print(f"{IP}:{PORTA}")
+                
                 verificar_validade_certificado(certificado)
                 if verificar_assinatura_resposta(certificado, assinatura, dados["mensagem"]):
                     return dados["mensagem"]
@@ -148,6 +177,20 @@ def ObterCategoriasSegurasProdutorRest(IP, PORTA):
     except requests.exceptions.RequestException as e:
         return []
     
+def ObterProdutosNaoSegurosPorCategoria(IP, PORTA, categoria):
+    URL = f"http://{IP}:{PORTA}/produtos?categoria={categoria}"
+    try:
+        response = requests.get(URL, timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            debug_print(f"Erro ao obter produtos não seguros de {IP}:{PORTA} - Status: {response.status_code}")
+            return []
+    except requests.exceptions.RequestException as e:
+        debug_print(f"Erro ao ligar a {IP}:{PORTA} para obter produtos (Não Seguro): {e}")
+        return []
+
+
 def ObterProdutosSegurosPorCategoria(IP, PORTA, categoria):
     URL = f"http://{IP}:{PORTA}/secure/produtos?categoria={categoria}"
     try:
@@ -177,6 +220,22 @@ def ObterProdutosSegurosPorCategoria(IP, PORTA, categoria):
     except requests.exceptions.RequestException as e:
         return []
     
+def ComprarProdutoNaoSeguro(IP, PORTA, produto, quantidade):
+    URL = f"http://{IP}:{PORTA}/comprar/{produto}/{quantidade}"
+    try:
+        response = requests.get(URL, timeout=5)
+        if response.status_code == 200:
+            debug_print(f"Compra de {quantidade} unidade(s) de {produto} concluída com sucesso.")
+            return True
+        elif response.status_code == 404:
+            debug_print(f"Erro: Produto {produto} não encontrado ou quantidade insuficiente.")
+        else:
+            debug_print(f"Erro ao comprar o produto {produto}: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        debug_print(f"Erro a ligar ao {IP}:{PORTA} para comprar produto.: {e}")
+    return False
+
+
 def ComprarProdutoSeguro(IP, PORTA, produto, quantidade):
     URL = f"http://{IP}:{PORTA}/secure/comprar/{produto}/{quantidade}"
     try:
@@ -202,7 +261,7 @@ def ComprarProdutoSeguro(IP, PORTA, produto, quantidade):
         else:
             debug_print(f"{COR_ERRO}Erro: {COR_RESET}Erro ao comprar: {response.status_code}")
     except requests.exceptions.RequestException as e:
-        debug_print(f"{COR_ERRO}Erro: {COR_RESET}Erro ao conectar ao produtor REST: {e}")
+        debug_print(f"{COR_ERRO}Erro: {COR_RESET}Erro ao ligar ao produtor REST: {e}")
     return False
 # ------------ Funções REST ------------ #
 
@@ -246,9 +305,9 @@ def ObterCategoriasSocket():
                         "Categorias": categorias
                     })
                 else:
-                    print(f"Nenhuma categoria encontrada para {ProdutorSocket['Nome']}")
+                    exibir_erro(f"Nenhuma categoria encontrada para {ProdutorSocket['Nome']}")
         except Exception as e:
-            debug_print(f"Erro ao conectar com {IP}:{PORTA} para obter categorias: {e}")
+            debug_print(f"Erro ao ligar com {IP}:{PORTA} para obter categorias: {e}")
     return CategoriasProdutorSocketDisponiveis
 
 def ComprarProdutoSocket(produtor_info, nome_produto, quantidade):
@@ -260,18 +319,25 @@ def ComprarProdutoSocket(produtor_info, nome_produto, quantidade):
             sock.sendall(mensagem_compra.encode('utf-8'))
             resposta = sock.recv(1024).decode('utf-8')
             if resposta == "OK":
-                debug_print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Compra realizada com sucesso para o produto {nome_produto} (Quantidade: {quantidade}).")
+                debug_print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Compra concluída com sucesso para o produto {nome_produto} (Quantidade: {quantidade}).")
                 return True
             else:
                 debug_print(f"{COR_ERRO}Erro: {COR_RESET}Erro ao comprar {nome_produto}: {resposta}")
     except socket.timeout:
-        debug_print(f"{COR_ERRO}Erro: {COR_RESET}Timeout atingido ao tentar conectar ao produtor {produtor_info['IP']}:{produtor_info['PORTA']}.")
+        debug_print(f"{COR_ERRO}Erro: {COR_RESET}Timeout atingido ao tentar ligar ao produtor {produtor_info['IP']}:{produtor_info['PORTA']}.")
     except Exception as e:
         debug_print(f"{COR_ERRO}Erro: {COR_RESET}Erro ao tentar comprar o produto {nome_produto}: {e}")
     return False
 # ------------ Funções Socket ------------ #
 
 # ------------ Funções Globais ------------ #
+def obter_ip_vpn():
+    for interface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == socket.AF_INET and addr.address.startswith('10.'):
+                return addr.address
+    return None
+
 def ObterProdutosPorCategoria(Produtor, CategoriaEscolhida):
     Produtos = []
     if Produtor['Conexao'] == "Socket":
@@ -285,14 +351,17 @@ def ObterProdutosPorCategoria(Produtor, CategoriaEscolhida):
                     resposta = s.recv(4096).decode('utf-8')
                     Produtos = json.loads(resposta)
                 except socket.timeout:
-                    debug_print(f"Erro: Timeout atingido ao tentar conectar com o produtor {Produtor['IP']}:{Produtor['PORTA']}")
+                    debug_print(f"Erro: Timeout atingido ao tentar ligar com o produtor {Produtor['IP']}:{Produtor['PORTA']}")
                 except Exception as e:
-                    debug_print(f"Erro inesperado ao tentar se conectar com o produtor: {e}")
+                    debug_print(f"Erro inesperado ao tentar se ligar com o produtor: {e}")
         except Exception as e:
-            debug_print(f"Erro ao se conectar ao produtor {Produtor['IP']}:{Produtor['PORTA']}. Detalhes: {e}")
+            debug_print(f"Erro ao se ligar ao produtor {Produtor['IP']}:{Produtor['PORTA']}. Detalhes: {e}")
         return Produtos
-    elif Produtor['Conexao'] == "REST":
-        return ObterProdutosSegurosPorCategoria(Produtor['IP'], Produtor['PORTA'], CategoriaEscolhida)
+    elif Produtor['Conexao'] == "REST Seguro":
+        Produtos = ObterProdutosSegurosPorCategoria(Produtor['IP'], Produtor['PORTA'], CategoriaEscolhida)
+    elif Produtor['Conexao'] == "REST Não Seguro":
+        Produtos = ObterProdutosNaoSegurosPorCategoria(Produtor['IP'], Produtor['PORTA'], CategoriaEscolhida)
+    return Produtos
         
 def ListarProdutos(ProdutosCategoriaEscolhida):
     print("\nProdutos disponíveis para compra:")
@@ -316,28 +385,31 @@ def ComprarProdutos(ProdutosCategoriaEscolhida, produtos_escolhidos):
     for id_produto in produtos_escolhidos:
         produto_encontrado = next((p for p in produtos_para_exibir if p["produto"]['id'] == id_produto), None)
         if not produto_encontrado:
-            print(f"Produto com ID {id_produto} não encontrado.")
+            exibir_erro(f"Produto com ID {id_produto} não encontrado.")
             continue
 
         produto = produto_encontrado["produto"]
         produtor_info = produto_encontrado["produtor"]
 
         if produto['quantidade'] == 0:
-            print(f"Desculpe, {produto['produto']} está fora de estoque.")
+            exibir_erro(f"Desculpe, {produto['produto']} está fora de estoque.")
             continue
 
         try:
             quantidade_desejada = int(input(f"Quantas unidades de {produto['produto']} deseja comprar? "))
             if quantidade_desejada <= 0:
-                print("Quantidade inválida. Por favor, insira um número positivo.")
+                exibir_erro("Quantidade inválida. Insira um número positivo.")
                 continue
 
             if quantidade_desejada <= produto['quantidade']:
                 sucesso = False
+                
                 if produtor_info['Conexao'] == 'Socket':
                     sucesso = ComprarProdutoSocket(produtor_info, produto['produto'], quantidade_desejada)
-                elif produtor_info['Conexao'] == 'REST':
+                elif produtor_info['Conexao'] == 'REST Seguro':
                     sucesso = ComprarProdutoSeguro(produtor_info['IP'], produtor_info['PORTA'], produto['produto'], quantidade_desejada)
+                elif produtor_info['Conexao'] == 'REST Não Seguro':
+                    sucesso = ComprarProdutoNaoSeguro(produtor_info['IP'], produtor_info['PORTA'], produto['produto'], quantidade_desejada)
 
                 if sucesso:
                     produto['quantidade'] -= quantidade_desejada
@@ -345,11 +417,13 @@ def ComprarProdutos(ProdutosCategoriaEscolhida, produtos_escolhidos):
                     nome_produtor = produtor_info["Nome"]
                     ip = produtor_info["IP"]
                     porta = produtor_info["PORTA"]
+                    conexao = produtor_info["Conexao"]
 
                     if nome_produtor not in subscricoes_compradas:
                         subscricoes_compradas[nome_produtor] = {
                             "ip": ip,
                             "porta": porta,
+                            "conexao": conexao,
                             "produtos": []
                         }
 
@@ -366,23 +440,24 @@ def ComprarProdutos(ProdutosCategoriaEscolhida, produtos_escolhidos):
                             "preco": produto['preco']
                         })
 
-                    print(f"{quantidade_desejada} unidades de {produto['produto']} compradas com sucesso.")
+                    exibir_sucesso(f"{quantidade_desejada} unidades de {produto['produto']} compradas com sucesso.")
                 else:
-                    print(f"Falha ao comprar {quantidade_desejada} unidades de {produto['produto']}.")
+                    exibir_erro(f"Falha ao comprar {quantidade_desejada} unidades de {produto['produto']}.")
             else:
-                print(f"Desculpe, só temos {produto['quantidade']} unidades disponíveis de {produto['produto']}.")
+                exibir_erro(f"Desculpe, só temos {produto['quantidade']} unidades disponíveis de {produto['produto']}.")
         except ValueError:
-            debug_print("Quantidade inválida. Por favor, insira um número válido.")
+            debug_print("Quantidade inválida. Insira um número válido.")
 
 def listar_subscricoes():
     if not subscricoes_compradas:
-        print(f"{COR_ERRO}Erro: {COR_RESET}Você não tem nenhuma subscrição.")
+        exibir_erro(f"Não tem nenhuma subscrição.")
         return
-    print("--- Subscrições ---")
+    print("--- Subscrições Ativas ---")
     for nome_produtor, dados_produtor in subscricoes_compradas.items():
         ip = dados_produtor["ip"]
         porta = dados_produtor["porta"]
-        print(f"\nProdutor: {nome_produtor} (IP: {ip}, Porta: {porta})")
+        conexao = dados_produtor["conexao"]
+        print(f"Produtor: {nome_produtor} (IP: {ip}, Porta: {porta}, Conexão: {conexao})")
         for produto in dados_produtor["produtos"]:
             nome_produto = produto["nome"]
             quantidade = produto["quantidade"]
@@ -404,25 +479,25 @@ def definir_taxa_revenda():
                 print(f"{produto_id}. Produto: {produto['nome']} - Preço de Compra: {produto['preco']}")
                 produtos_para_exibir.append(produto)
                 produto_id += 1
-        produto_numero = int(input("\nDigite o número do produto para definir a taxa de revenda: "))
+        produto_numero = int(input("\nIntroduza o número do produto para definir a taxa de revenda: "))
         if produto_numero < 1 or produto_numero > len(produtos_para_exibir):
-            print(f"{COR_ERRO}Erro: {COR_RESET}Número de produto inválido.")
+            exibir_erro(f"Número de produto inválido.")
             return
         produto_selecionado = produtos_para_exibir[produto_numero - 1]
-        print(f"Você selecionou o produto: {produto_selecionado['nome']}")
-        taxa = float(input("Digite a nova taxa de revenda (%): "))
+        print(f"Selecionou o produto: {produto_selecionado['nome']}")
+        taxa = float(input("Introduza a nova taxa de revenda (%): "))
         if taxa < 0:
-            print(f"{COR_ERRO}Erro: {COR_RESET}A taxa não pode ser negativa.")
+            exibir_erro(f"A taxa não pode ser negativa.")
             return
         taxas_revenda[produto_selecionado['nome']] = taxa
-        print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Taxa de revenda para o produto '{produto_selecionado['nome']}' definida para {taxa}%.")
+        exibir_sucesso(f"Taxa de revenda para o produto '{produto_selecionado['nome']}' definida para {taxa}%.")
     except ValueError:
         debug_print(f"{COR_ERRO}Erro: {COR_RESET}Valor inválido. Insira um número válido.")
 
 def MenuMarketplace():
     while True:
         print("--- Menu Marketplace ---")
-        print("1. Lista de Subscrições")
+        print("1. Subscrições Ativas")
         print("2. Comprar Produtos")
         print("3. Definir Taxa de Revenda")
         print("99. Sair")
@@ -434,13 +509,14 @@ def MenuMarketplace():
         elif escolha == '3':
             definir_taxa_revenda()
         elif escolha == '99':
-            print(f"{COR_SUCESSO}Sucesso: {COR_RESET}Saindo do Marketplace. Até logo!")
+            exibir_sucesso(f"Saindo do Marketplace. Até logo!")
             time.sleep(1)
             break
         else:
-            print(f"{COR_ERRO}Erro: {COR_RESET}Opção inválida. Tente novamente.")
+            exibir_erro(f"Opção inválida. Tente novamente.")
 
 def main():
+    print("A carregar Categorias ...")
     ProdutoresComCategoriaEscolhida = []
     ProdutosCategoriaEscolhida = []
     CategoriasDisponiveis = set()
@@ -451,24 +527,33 @@ def main():
 
     if Categorias:
         for Produtor in Categorias:
+            print(f"{Produtor['Nome']} (IP: {Produtor['IP']}:{Produtor['PORTA']}) - {Produtor['Conexao']}")
             if 'Categorias' in Produtor and Produtor['Categorias']:
+                for categoria in Produtor['Categorias']:
+                    print(f" - {categoria}")
                 CategoriasDisponiveis.update(Produtor['Categorias'])
 
         if CategoriasDisponiveis:
-            print("Categorias Disponíveis:")
+            print("\nCategorias Disponíveis:")
             print(", ".join(CategoriasDisponiveis))
         else:
-            print("Sem categorias disponíveis. Tente novamente.")
+            exibir_erro("\nSem categorias disponíveis. Tente novamente.")
             return
+    
+        while True:
+            CategoriaEscolhida = input("\nEscolha uma categoria: ").strip()
 
-        CategoriaEscolhida = input("Escolha uma categoria: ").strip()
+            ProdutoresComCategoriaEscolhida = [
+                Produtor for Produtor in Categorias 
+                if 'Categorias' in Produtor and CategoriaEscolhida in Produtor['Categorias']
+            ]
 
-        for Produtor in Categorias:
-            if 'Categorias' in Produtor and CategoriaEscolhida in Produtor['Categorias']:
-                ProdutoresComCategoriaEscolhida.append(Produtor)
+            if ProdutoresComCategoriaEscolhida:
+                break 
+            else:
+                exibir_erro(f"A categoria '{CategoriaEscolhida}' não está disponível ou não possui produtos. Tente novamente.")
                 
         for Produtor in ProdutoresComCategoriaEscolhida:
-            print(Produtor)
             Produtos = ObterProdutosPorCategoria(Produtor, CategoriaEscolhida)
             if Produtos:
                 ProdutorComProdutos = {
@@ -483,19 +568,24 @@ def main():
         if ProdutosCategoriaEscolhida:
             ListarProdutos(ProdutosCategoriaEscolhida)
             try:
-                produtos_escolhidos = list(map(int, input("\nDigite os números dos produtos que deseja comprar (separados por vírgula): ").split(',')))
+                produtos_escolhidos = list(map(int, input("\nIntroduza os números dos produtos que deseja comprar (separados por vírgula): ").split(',')))
             except ValueError:
-                debug_print("Entrada inválida. Por favor, insira números válidos separados por vírgula.")
+                debug_print("Entrada inválida. Insira números válidos separados por vírgula.")
                 return
 
             ComprarProdutos(ProdutosCategoriaEscolhida, produtos_escolhidos)
             MenuMarketplace()
         else:
-            print(f"Sem produtos disponíveis na categoria '{CategoriaEscolhida}'. Tente novamente.")
+            exibir_erro(f"Sem produtos disponíveis na categoria '{CategoriaEscolhida}'. Tente novamente.")
     else:
-        print("Sem categorias disponíveis. Tente novamente.")
+        exibir_erro("Sem categorias disponíveis. Tente novamente.")
 
 # ------------ Funções Globais ------------ #
 
 if __name__ == "__main__":
-   main()
+    IP_Default = obter_ip_vpn()
+    if IP_Default:
+        exibir_sucesso(f"IP VPN detectado: {IP_Default}")
+        main()
+    else:
+        exibir_erro(f"IP VPN não detectado, tente outra vez!")

@@ -126,9 +126,9 @@ def obter_produtos_seguranca():
         produtos = [
             {
                 "categoria": prod['Categoria'],
+                "preco": prod['Preco'],
                 "produto": prod['Nome'],
-                "quantidade": prod['Quantidade'],
-                "preco": prod['Preco']
+                "quantidade": prod['Quantidade']
             }
             for prod in Info_Produtor.get("Produtos", []) if prod['Categoria'] == categoria
         ]
@@ -175,7 +175,7 @@ def comprar_produto_seguranca(produto, quantidade):
 # ------------ Routes Rest ------------ #
 
 # ------------ Produtor Rest ------------ #
-def reregistrar_produtor_periodicamente(nome_produtor):
+def registar_produtor_seguro_periodicamente(nome_produtor):
     while True:
         try:
             response = requests.post('http://193.136.11.170:5001/produtor_certificado', json={
@@ -189,12 +189,30 @@ def reregistrar_produtor_periodicamente(nome_produtor):
                 certificado = response.text
                 with open("certificado.pem", "w") as f:
                     f.write(certificado)
-                print("Certificado recebido e salvo com sucesso.")
+                adicionar_notificacao("Certificado recebido e salvo com sucesso.")
             else:
-                print(f"Erro ao re-registrar produtor: {response.status_code} - {response.text}")
+                print(f"Erro ao registrar produtor: {response.status_code} - {response.text}")
         except requests.exceptions.RequestException as e:
-            debug_print(f"Erro ao tentar re-registrar o produtor: {e}")
+            debug_print(f"Erro ao tentar registrar o produtor: {e}")
         time.sleep(60)
+
+def registar_produtor_nao_seguro_periodicamente(nome_produtor):
+    while True:
+        try:
+            response = requests.post('http://193.136.11.170:5001/produtor', json={
+                "ip": Info_Produtor["IP"],
+                "porta": Info_Produtor["Porta"],
+                "nome": nome_produtor
+            })
+
+            if response.status_code in (200, 201):
+                adicionar_notificacao(f"Registro do produtor '{nome_produtor}' realizado com sucesso.")
+            else:
+                print(f"Erro ao registrar produtor não seguro: {response.status_code} - {response.text}")
+        except requests.exceptions.RequestException as e:
+            debug_print(f"Erro ao tentar registrar o produtor não seguro: {e}")
+        time.sleep(60)
+
 
 def assinar_mensagem(mensagem):
     with open("chave_privada.pem", "rb") as f:
@@ -234,7 +252,7 @@ def gerar_chaves_rsa():
         ))
     return private_key, public_key
 
-def registar_produtor_rest(nome_produtor):
+def registar_produtor_rest_seguro(nome_produtor):
     global Info_Produtor, IP_Default, Porta_Default_Rest
     private_key, public_key = gerar_chaves_rsa()
     porta = gerar_id_ou_porta_rest(IP_Default, Porta_Default_Rest)
@@ -267,8 +285,37 @@ def registar_produtor_rest(nome_produtor):
             print(f"Erro ao registar produtor: {response.status_code} - {response.text}")
     except requests.exceptions.RequestException as e:
         debug_print(f"Erro de conexão: {e}")
-        return None 
+        return None
     return Info_Produtor
+
+def registar_produtor_rest_nao_seguro(nome_produtor):
+    global Info_Produtor, IP_Default, Porta_Default_Rest
+    porta = gerar_id_ou_porta_rest(IP_Default, Porta_Default_Rest)
+
+    Info_Produtor = {
+        "Nome": nome_produtor,
+        "IP": IP_Default,
+        "Porta": porta,
+        "Produtos": []
+    }
+
+    Post_Produtor = {
+        "ip": Info_Produtor["IP"],
+        "porta": Info_Produtor["Porta"],
+        "nome": Info_Produtor["Nome"]
+    }
+
+    try:
+        response = requests.post('http://193.136.11.170:5001/produtor', json=Post_Produtor)
+        if response.status_code in (200, 201):
+            print("Produtor Não Seguro registrado com sucesso.")
+        else:
+            print(f"Erro ao registar produtor não seguro: {response.status_code} - {response.text}")
+    except requests.exceptions.RequestException as e:
+        debug_print(f"Erro de conexão: {e}")
+        return None
+    return Info_Produtor
+
 
 def gerar_itens_para_produtor_rest(Info_Produtor, numero_itens):  
     produtos = carregar_dados(arquivo_produtos)
@@ -403,22 +450,44 @@ def menu_notificacoes():
     input("\nPressione Enter para voltar ao menu principal...")
 
 def adicionar_notificacao(mensagem):
-    ip_cliente = request.remote_addr
-    porta_cliente = request.host.split(':')[-1]
-    notificacao_completa = f"{mensagem} (IP: {ip_cliente}, Porta: {porta_cliente})"
-    Notificacoes_Rest.append(notificacao_completa)
+    try:
+        if request and request.remote_addr:
+            ip_cliente = request.remote_addr
+            porta_cliente = request.host.split(':')[-1]
+            notificacao_completa = f"{mensagem} (IP: {ip_cliente}, Porta: {porta_cliente})"
+        else:
+            notificacao_completa = mensagem  # Mensagem de sistema (sem contexto de requisição)
 
-def menu_rest():
+        Notificacoes_Rest.append(notificacao_completa)
+        print(f"Notificação adicionada: {notificacao_completa}")
+    except RuntimeError:  # Sem contexto de requisição
+        Notificacoes_Rest.append(mensagem)
+        print(f"Notificação de sistema adicionada: {mensagem}")
+
+def menu_rest_seguro():
     global Info_Produtor
     while True:
-        nome_produtor = input("Digite o nome do produtor: ")
-        Info_Produtor = registar_produtor_rest(nome_produtor)
+        nome_produtor = input("Digite o nome do produtor REST Seguro: ")
+        Info_Produtor = registar_produtor_rest_seguro(nome_produtor)
         gerar_itens_para_produtor_rest(Info_Produtor, random.randint(3, 5))
-        threading.Thread(target=reregistrar_produtor_periodicamente, args=(nome_produtor,), daemon=True).start()
+        threading.Thread(target=registar_produtor_seguro_periodicamente, args=(nome_produtor,), daemon=True).start()
         threading.Thread(target=iniciar_servidor_flask).start()
         time.sleep(3)
         threading.Thread(target=menu_gestao_produtos).start()
         break
+
+def menu_rest_nao_seguro():
+    global Info_Produtor
+    while True:
+        nome_produtor = input("Digite o nome do produtor REST Não Seguro: ")
+        Info_Produtor = registar_produtor_rest_nao_seguro(nome_produtor)
+        gerar_itens_para_produtor_rest(Info_Produtor, random.randint(3, 5))
+        threading.Thread(target=registar_produtor_nao_seguro_periodicamente, args=(nome_produtor,), daemon=True).start()
+        threading.Thread(target=iniciar_servidor_flask).start()
+        time.sleep(3)
+        threading.Thread(target=menu_gestao_produtos).start()
+        break
+
 # ------------ Produtor Rest ------------ #
 
 # ------------ Produtor Socket ------------ #
@@ -653,22 +722,27 @@ def carregar_dados(arquivo):
 def menu_inicial(IP_Default):
     while True:
         print("\nSelecione o tipo de Produtor para iniciar:")
-        print("1. Produtor REST")
-        print("2. Produtor Socket")
-        print("3. Sair")
+        print("1. Produtor REST Seguro")
+        print("2. Produtor REST Não Seguro")
+        print("3. Produtor Socket")
+        print("4. Sair")
         escolha = input("Insira o número da opção desejada: ").strip()
 
         if escolha == "1":
-            menu_rest()
+            menu_rest_seguro()
             break
         elif escolha == "2":
-            menu_socket(IP_Default)
+            menu_rest_nao_seguro()
             break
         elif escolha == "3":
+            menu_socket(IP_Default)
+            break
+        elif escolha == "4":
             print("Encerrando o programa.")
             break
         else:
             print("Opção inválida. Tente novamente.")
+
 # ------------ Funções Globais ------------ #
 
 if __name__ == "__main__":

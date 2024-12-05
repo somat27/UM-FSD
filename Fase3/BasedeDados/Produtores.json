@@ -30,5 +30,37 @@
                 "quantidade": 95
             }
         ]
+    },
+    {
+        "ID": 2,
+        "Nome": "Tomas",
+        "IP": "10.8.0.4",
+        "Porta": 1026,
+        "Produtos": [
+            {
+                "produto": "T-shirt",
+                "categoria": "Roupa",
+                "preco": 9.01,
+                "quantidade": 135
+            },
+            {
+                "produto": "Uva",
+                "categoria": "Fruta",
+                "preco": 1.61,
+                "quantidade": 114
+            },
+            {
+                "produto": "Auto-ajuda",
+                "categoria": "Livros",
+                "preco": 24.3,
+                "quantidade": 105
+            },
+            {
+                "produto": "Drama",
+                "categoria": "Filmes",
+                "preco": 12.45,
+                "quantidade": 136
+            }
+        ]
     }
 ]
