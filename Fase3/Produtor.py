@@ -459,10 +459,8 @@ def adicionar_notificacao(mensagem):
             notificacao_completa = mensagem  
 
         Notificacoes_Rest.append(notificacao_completa)
-        print(f"Notificação adicionada: {notificacao_completa}")
     except RuntimeError: 
         Notificacoes_Rest.append(mensagem)
-        print(f"Notificação de sistema adicionada: {mensagem}")
 
 def menu_rest_seguro():
     global Info_Produtor
