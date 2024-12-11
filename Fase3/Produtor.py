@@ -694,12 +694,22 @@ def iniciar_sessao_produtor():
     id_produtor = input("Digite o ID do produtor: ")
     produtores = carregar_dados(arquivo_produtores)
     produtor = next((p for p in produtores if p['Nome'] == nome_produtor and str(p['ID']) == id_produtor), None)
+    
     if produtor:
+        novo_ip = obter_ip_vpn()
+        if novo_ip:
+            produtor['IP'] = novo_ip
+            salvar_dados(arquivo_produtores, produtores)
+            print(f"IP atualizado para o endereço da VPN: {novo_ip}")
+        else:
+            print("Não foi possível detectar o IP da VPN. Mantendo o IP existente.")
+        
         print(f"Bem-vindo de volta, {produtor['Nome']}!")
         return produtor['Nome'], produtor['ID'], produtor['Porta'], produtor['IP']
     else:
         print("Produtor não encontrado.")
-        return None, None, None
+        return None, None, None, None
+
 # ------------ Produtor Socket ------------ #
 
 # ------------ Funções Globais ------------ #

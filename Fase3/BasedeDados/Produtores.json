@@ -2,14 +2,14 @@
     {
         "ID": 1,
         "Nome": "Tomas",
-        "IP": "10.8.0.4",
+        "IP": "10.8.0.13",
         "Porta": 1025,
         "Produtos": [
             {
                 "produto": "Auto-ajuda",
                 "categoria": "Livros",
                 "preco": 22.49,
-                "quantidade": 92
+                "quantidade": 99
             },
             {
                 "produto": "Martelo",
@@ -21,13 +21,13 @@
                 "produto": "Morango",
                 "categoria": "Fruta",
                 "preco": 0.83,
-                "quantidade": 49
+                "quantidade": 65
             },
             {
                 "produto": "Sapatos",
                 "categoria": "Roupa",
                 "preco": 70.67,
-                "quantidade": 95
+                "quantidade": 118
             }
         ]
     },
@@ -60,6 +60,122 @@
                 "categoria": "Filmes",
                 "preco": 12.45,
                 "quantidade": 136
+            }
+        ]
+    },
+    {
+        "ID": 3,
+        "Nome": "Tomas",
+        "IP": "10.8.0.13",
+        "Porta": 1027,
+        "Produtos": [
+            {
+                "produto": "Acao",
+                "categoria": "Filmes",
+                "preco": 18.57,
+                "quantidade": 37
+            },
+            {
+                "produto": "Documentario",
+                "categoria": "Filmes",
+                "preco": 12.55,
+                "quantidade": 100
+            },
+            {
+                "produto": "Casual",
+                "categoria": "Sapatos",
+                "preco": 24.34,
+                "quantidade": 6
+            }
+        ]
+    },
+    {
+        "ID": 4,
+        "Nome": "TOmas",
+        "IP": "10.8.0.13",
+        "Porta": 1028,
+        "Produtos": [
+            {
+                "produto": "Casaco",
+                "categoria": "Roupa",
+                "preco": 98.58,
+                "quantidade": 125
+            },
+            {
+                "produto": "Calcas",
+                "categoria": "Roupa",
+                "preco": 28.49,
+                "quantidade": 137
+            },
+            {
+                "produto": "Morango",
+                "categoria": "Fruta",
+                "preco": 1.2,
+                "quantidade": 144
+            }
+        ]
+    },
+    {
+        "ID": 5,
+        "Nome": "JJ",
+        "IP": "10.8.0.13",
+        "Porta": 1029,
+        "Produtos": [
+            {
+                "produto": "Comedia",
+                "categoria": "Filmes",
+                "preco": 15.56,
+                "quantidade": 68
+            },
+            {
+                "produto": "Alicate",
+                "categoria": "Ferramentas",
+                "preco": 8.77,
+                "quantidade": 54
+            },
+            {
+                "produto": "Formal",
+                "categoria": "Sapatos",
+                "preco": 35.48,
+                "quantidade": 50
+            },
+            {
+                "produto": "Banana",
+                "categoria": "Fruta",
+                "preco": 0.73,
+                "quantidade": 101
+            },
+            {
+                "produto": "Ficcao Cientifica",
+                "categoria": "Livros",
+                "preco": 19.15,
+                "quantidade": 116
+            }
+        ]
+    },
+    {
+        "ID": 6,
+        "Nome": "Tomas",
+        "IP": "10.8.0.13",
+        "Porta": 1030,
+        "Produtos": [
+            {
+                "produto": "Acao",
+                "categoria": "Filmes",
+                "preco": 17.9,
+                "quantidade": 93
+            },
+            {
+                "produto": "Documentario",
+                "categoria": "Filmes",
+                "preco": 11.35,
+                "quantidade": 68
+            },
+            {
+                "produto": "Casaco",
+                "categoria": "Roupa",
+                "preco": 72.44,
+                "quantidade": 48
             }
         ]
     }
